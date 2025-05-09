@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getVideoSummary } from '@/services/api';
+import { saveYouTubeUrl, pollForVideoSummary } from '@/services/supabaseService';
 
 const ToolSection = () => {
   const [url, setUrl] = useState('');
@@ -35,10 +35,22 @@ const ToolSection = () => {
     setSummary(null);
 
     try {
-      const result = await getVideoSummary(url);
-      setSummary(result);
-      toast.success('Resumo gerado com sucesso!');
+      // Save the URL to Supabase and get the record
+      const record = await saveYouTubeUrl(url);
+      toast.success('Vídeo enviado para processamento');
+      
+      // Poll for the summary
+      const summaryResult = await pollForVideoSummary(record.id);
+      
+      if (summaryResult?.summary) {
+        setSummary(summaryResult.summary);
+        toast.success('Resumo gerado com sucesso!');
+      } else {
+        setError('Não foi possível gerar o resumo. Por favor, tente novamente.');
+        toast.error('Erro ao gerar resumo. Tente novamente.');
+      }
     } catch (err) {
+      console.error('Error in handleSubmit:', err);
       setError('Não foi possível gerar o resumo. Por favor, tente novamente.');
       toast.error('Erro ao gerar resumo. Tente novamente.');
     } finally {
