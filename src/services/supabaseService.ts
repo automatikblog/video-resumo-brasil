@@ -29,7 +29,11 @@ export const saveYouTubeUrl = async (url: string): Promise<VideoSummary> => {
   // Call the webhook to process the video
   await triggerSummaryGeneration(data.id, url);
 
-  return data;
+  // Type assertion to ensure the status is one of the expected values
+  return {
+    ...data,
+    status: data.status as VideoSummary['status']
+  };
 };
 
 /**
@@ -75,7 +79,13 @@ export const getVideoSummary = async (id: string): Promise<VideoSummary | null> 
     throw new Error('Failed to fetch video summary');
   }
 
-  return data;
+  if (!data) return null;
+
+  // Type assertion to ensure the status is one of the expected values
+  return {
+    ...data,
+    status: data.status as VideoSummary['status']
+  };
 };
 
 /**
