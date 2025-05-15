@@ -13,7 +13,7 @@ export const signInWithGoogle = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/dashboard`,
+      redirectTo: window.location.origin, // Use dynamic origin instead of hardcoded localhost
     },
   });
   
