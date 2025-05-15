@@ -1,16 +1,48 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { saveYouTubeUrl, pollForVideoSummary } from '@/services/supabaseService';
+import { getFingerprint, checkAnonymousUserLimit } from '@/services/fingerprintService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const ToolSection = () => {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fingerprint, setFingerprint] = useState<string | null>(null);
+  const [canUse, setCanUse] = useState<boolean>(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const currentLang = getCurrentLang();
+
+  useEffect(() => {
+    const initFingerprint = async () => {
+      try {
+        const fp = await getFingerprint();
+        setFingerprint(fp);
+        
+        // Only check usage limit for non-authenticated users
+        if (!user) {
+          const hasRemainingUses = await checkAnonymousUserLimit(fp);
+          setCanUse(hasRemainingUses);
+          
+          if (!hasRemainingUses) {
+            toast.info(getLangString('usageLimitReached', currentLang));
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing fingerprint:', err);
+      }
+    };
+
+    initFingerprint();
+  }, [user]);
 
   const isValidYouTubeUrl = (url: string) => {
     const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
@@ -21,12 +53,18 @@ const ToolSection = () => {
     e.preventDefault();
     
     if (!url.trim()) {
-      toast.error('Por favor, insira uma URL do YouTube');
+      toast.error(getLangString('enterYouTubeUrl', currentLang));
       return;
     }
     
     if (!isValidYouTubeUrl(url)) {
-      toast.error('Por favor, insira uma URL válida do YouTube');
+      toast.error(getLangString('enterValidYouTubeUrl', currentLang));
+      return;
+    }
+
+    // If anonymous user has reached the limit, prompt to sign up
+    if (!user && !canUse) {
+      toast.error(getLangString('usageLimitReached', currentLang));
       return;
     }
 
@@ -35,27 +73,31 @@ const ToolSection = () => {
     setSummary(null);
 
     try {
-      // Save the URL to Supabase and get the record
-      const record = await saveYouTubeUrl(url);
-      toast.success('Vídeo enviado para processamento');
+      // Save the URL to Supabase with user info or fingerprint
+      const record = await saveYouTubeUrl(url, user?.id, fingerprint);
+      toast.success(getLangString('videoSubmitted', currentLang));
       
       // Poll for the summary
       const summaryResult = await pollForVideoSummary(record.id);
       
       if (summaryResult?.summary) {
         setSummary(summaryResult.summary);
-        toast.success('Resumo gerado com sucesso!');
+        toast.success(getLangString('summaryGeneratedSuccess', currentLang));
       } else {
-        setError('Não foi possível gerar o resumo. Por favor, tente novamente.');
-        toast.error('Erro ao gerar resumo. Tente novamente.');
+        setError(getLangString('summaryGenerationFailed', currentLang));
+        toast.error(getLangString('summaryGenerationError', currentLang));
       }
     } catch (err) {
       console.error('Error in handleSubmit:', err);
-      setError('Não foi possível gerar o resumo. Por favor, tente novamente.');
-      toast.error('Erro ao gerar resumo. Tente novamente.');
+      setError(getLangString('summaryGenerationFailed', currentLang));
+      toast.error(getLangString('summaryGenerationError', currentLang));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSignIn = () => {
+    navigate('/auth');
   };
 
   return (
@@ -63,10 +105,10 @@ const ToolSection = () => {
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Experimente <span className="gradient-text">agora mesmo</span>
+            {getLangString('tryItNow', currentLang)} <span className="gradient-text">{getLangString('rightNow', currentLang)}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Cole o link de qualquer vídeo do YouTube e receba um resumo inteligente em segundos.
+            {getLangString('pasteAnyYouTubeLink', currentLang)}
           </p>
         </div>
 
@@ -77,30 +119,43 @@ const ToolSection = () => {
                 <div className="flex-1">
                   <Input
                     type="text"
-                    placeholder="Cole a URL do YouTube aqui..."
+                    placeholder={getLangString('pasteYouTubeUrl', currentLang)}
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     className="w-full h-12 text-base"
-                    disabled={isLoading}
+                    disabled={isLoading || (!user && !canUse)}
                   />
                 </div>
                 <Button 
                   type="submit" 
                   className="bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity h-12"
-                  disabled={isLoading}
+                  disabled={isLoading || (!user && !canUse)}
                 >
-                  {isLoading ? 'Processando...' : 'Resumir Vídeo'}
+                  {isLoading ? getLangString('processing', currentLang) : getLangString('summarizeVideo', currentLang)}
                 </Button>
               </div>
             </form>
 
+            {!user && !canUse && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+                <p className="mb-2">{getLangString('usageLimitReachedDetail', currentLang)}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSignIn}
+                  className="bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200"
+                >
+                  {getLangString('signUpForMore', currentLang)}
+                </Button>
+              </div>
+            )}
+
             {isLoading && (
               <div className="mt-8 text-center p-8">
                 <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-purple border-r-transparent align-[-0.125em]" role="status">
-                  <span className="sr-only">Carregando...</span>
+                  <span className="sr-only">{getLangString('loading', currentLang)}</span>
                 </div>
                 <p className="mt-4 text-lg text-muted-foreground">
-                  Processando seu vídeo. Isso pode levar alguns segundos...
+                  {getLangString('processingYourVideo', currentLang)}
                 </p>
               </div>
             )}
@@ -113,7 +168,7 @@ const ToolSection = () => {
 
             {!isLoading && summary && (
               <div className="mt-8 animate-fade-in">
-                <h3 className="text-xl font-semibold mb-4">Resumo do Vídeo</h3>
+                <h3 className="text-xl font-semibold mb-4">{getLangString('videoSummary', currentLang)}</h3>
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="whitespace-pre-wrap">{summary}</p>
                 </div>

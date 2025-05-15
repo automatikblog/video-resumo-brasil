@@ -9,31 +9,88 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          id: string
+          preferred_language: string | null
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          preferred_language?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          preferred_language?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      users_anonymous: {
+        Row: {
+          created_at: string | null
+          fingerprint: string
+          id: string
+          last_used: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          fingerprint: string
+          id?: string
+          last_used?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          fingerprint?: string
+          id?: string
+          last_used?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       video_summaries: {
         Row: {
           created_at: string
+          fingerprint: string | null
           id: string
           status: string
           summary: string | null
           updated_at: string
+          user_id: string | null
           video_id: string | null
           youtube_url: string
         }
         Insert: {
           created_at?: string
+          fingerprint?: string | null
           id?: string
           status?: string
           summary?: string | null
           updated_at?: string
+          user_id?: string | null
           video_id?: string | null
           youtube_url: string
         }
         Update: {
           created_at?: string
+          fingerprint?: string | null
           id?: string
           status?: string
           summary?: string | null
           updated_at?: string
+          user_id?: string | null
           video_id?: string | null
           youtube_url?: string
         }

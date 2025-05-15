@@ -9,15 +9,33 @@ interface VideoSummary {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;
+  user_id?: string | null;
+  fingerprint?: string | null;
 }
 
 /**
  * Saves a YouTube URL to Supabase and returns the created record
  */
-export const saveYouTubeUrl = async (url: string): Promise<VideoSummary> => {
+export const saveYouTubeUrl = async (
+  url: string, 
+  userId?: string | null, 
+  fingerprint?: string | null
+): Promise<VideoSummary> => {
+  const insertData: any = { youtube_url: url };
+  
+  // Add user_id if authenticated
+  if (userId) {
+    insertData.user_id = userId;
+  }
+  
+  // Add fingerprint for anonymous users
+  if (!userId && fingerprint) {
+    insertData.fingerprint = fingerprint;
+  }
+
   const { data, error } = await supabase
     .from('video_summaries')
-    .insert([{ youtube_url: url }])
+    .insert([insertData])
     .select()
     .single();
 
@@ -119,4 +137,27 @@ export const pollForVideoSummary = async (
   }
 
   throw new Error('Timed out waiting for summary');
+};
+
+/**
+ * Gets all video summaries for the current user
+ */
+export const getUserSummaries = async (userId?: string | null): Promise<VideoSummary[]> => {
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from('video_summaries')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user summaries:', error);
+    throw new Error('Failed to fetch summaries');
+  }
+
+  return data.map(summary => ({
+    ...summary,
+    status: summary.status as VideoSummary['status']
+  }));
 };
