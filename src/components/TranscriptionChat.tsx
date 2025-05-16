@@ -37,8 +37,8 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
   const [isLoading, setIsLoading] = useState(false);
   const currentLang = getCurrentLang();
   
-  // API key for Perplexity AI
-  const perplexityApiKey = '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';
+  // API key for OpenAI
+  const openAiApiKey = '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';
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -60,11 +60,11 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         throw new Error('Not enough content to analyze');
       }
       
-      // Call Perplexity API to process the question
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      // Call OpenAI API to process the question
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${perplexityApiKey}`,
+          'Authorization': `Bearer ${openAiApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
