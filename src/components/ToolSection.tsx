@@ -76,8 +76,9 @@ const ToolSection = () => {
     setSummary(null);
 
     try {
-      // Save the URL to Supabase with user info or fingerprint
-      const record = await saveYouTubeUrl(url, user?.id, fingerprint, isPlaylist);
+      // Fix: Save the URL to Supabase with correct arguments
+      // We need to pass isPlaylist as the third argument
+      const record = await saveYouTubeUrl(url, user?.id || null, fingerprint, isPlaylist);
       toast.success(getLangString('videoSubmitted', currentLang));
       
       // Poll for the summary

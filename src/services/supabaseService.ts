@@ -19,9 +19,13 @@ interface VideoSummary {
 export const saveYouTubeUrl = async (
   url: string, 
   userId?: string | null, 
-  fingerprint?: string | null
+  fingerprint?: string | null,
+  isPlaylist: boolean = false
 ): Promise<VideoSummary> => {
-  const insertData: any = { youtube_url: url };
+  const insertData: any = { 
+    youtube_url: url,
+    is_playlist: isPlaylist
+  };
   
   // Add user_id if authenticated
   if (userId) {

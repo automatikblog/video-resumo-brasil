@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TranscriptionChat from '@/components/TranscriptionChat';
-import { getYouTubeUrl, getVideoSummary } from '@/services/supabaseService';
+import { getVideoSummary } from '@/services/supabaseService';
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,7 +95,7 @@ const Summary = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {summaryData.summary ? (
+            {summaryData?.summary ? (
               <div className="whitespace-pre-wrap">{summaryData.summary}</div>
             ) : (
               <p>{getLangString('noSummaryAvailable', currentLang) || 'No summary available for this video.'}</p>
@@ -102,8 +103,8 @@ const Summary = () => {
           </CardContent>
         </Card>
         <TranscriptionChat
-          transcriptionId={summaryData.id}
-          transcriptionText={summaryData.summary || ''}
+          transcriptionId={summaryData?.id || ''}
+          transcriptionText={summaryData?.summary || ''}
         />
       </main>
       <Footer />

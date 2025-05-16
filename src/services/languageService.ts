@@ -1,4 +1,3 @@
-
 // Available languages
 export type Language = 'pt-BR' | 'en-US' | 'es-ES';
 
@@ -99,7 +98,8 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Transcribe Video',
     'es-ES': 'Transcribir Video'
   },
-  processing: {
+  // Fixed the duplicate "processing" key by adding a unique key name
+  processingVideo: {
     'pt-BR': 'Processando...',
     'en-US': 'Processing...',
     'es-ES': 'Procesando...'
@@ -220,7 +220,8 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Pending',
     'es-ES': 'Pendiente'
   },
-  processing: {
+  // Using processingStatus instead of duplicate "processing" key
+  processingStatus: {
     'pt-BR': 'Processando',
     'en-US': 'Processing',
     'es-ES': 'Procesando'
