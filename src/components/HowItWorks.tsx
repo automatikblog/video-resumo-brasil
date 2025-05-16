@@ -1,34 +1,51 @@
 
 import React from 'react';
-
-const steps = [
-  {
-    number: '01',
-    title: 'Cole o link',
-    description: 'Copie a URL de qualquer vídeo do YouTube e cole-a no campo de entrada.'
-  },
-  {
-    number: '02',
-    title: 'Processamento',
-    description: 'Nosso sistema analisa o conteúdo do vídeo, incluindo áudio e elementos visuais importantes.'
-  },
-  {
-    number: '03',
-    title: 'Resumo gerado',
-    description: 'Receba um resumo conciso com os pontos principais do vídeo em questão de segundos.'
-  }
-];
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const HowItWorks = () => {
+  const currentLang = getCurrentLang();
+  
+  const steps = [
+    {
+      number: '01',
+      title: currentLang === 'en-US' ? 'Paste the link' : 
+             currentLang === 'es-ES' ? 'Pegar el enlace' : 
+             'Cole o link',
+      description: currentLang === 'en-US' ? 'Copy the URL of any YouTube video or playlist and paste it into the input field.' : 
+                   currentLang === 'es-ES' ? 'Copie la URL de cualquier video o lista de reproducción de YouTube y péguela en el campo de entrada.' : 
+                   'Copie a URL de qualquer vídeo ou playlist do YouTube e cole-a no campo de entrada.'
+    },
+    {
+      number: '02',
+      title: currentLang === 'en-US' ? 'Processing' : 
+             currentLang === 'es-ES' ? 'Procesamiento' : 
+             'Processamento',
+      description: currentLang === 'en-US' ? 'Our system analyzes the content of the video, including audio and important visual elements.' : 
+                   currentLang === 'es-ES' ? 'Nuestro sistema analiza el contenido del video, incluyendo audio y elementos visuales importantes.' : 
+                   'Nosso sistema analisa o conteúdo do vídeo, incluindo áudio e elementos visuais importantes.'
+    },
+    {
+      number: '03',
+      title: currentLang === 'en-US' ? 'Transcription generated' : 
+             currentLang === 'es-ES' ? 'Transcripción generada' : 
+             'Transcrição gerada',
+      description: currentLang === 'en-US' ? 'Receive a complete transcription with all the important points of the video in a matter of seconds.' : 
+                   currentLang === 'es-ES' ? 'Reciba una transcripción completa con todos los puntos importantes del video en cuestión de segundos.' : 
+                   'Receba uma transcrição completa com todos os pontos importantes do vídeo em questão de segundos.'
+    }
+  ];
+
   return (
     <section id="como-funciona" className="section-padding bg-white">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Como <span className="gradient-text">Funciona</span>
+            <span className="gradient-text">{getLangString('howItWorks', currentLang)}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Nosso processo é simples e eficiente para que você possa economizar tempo rapidamente.
+            {currentLang === 'en-US' ? 'Our process is simple and efficient so you can save time quickly.' : 
+             currentLang === 'es-ES' ? 'Nuestro proceso es simple y eficiente para que pueda ahorrar tiempo rápidamente.' : 
+             'Nosso processo é simples e eficiente para que você possa economizar tempo rapidamente.'}
           </p>
         </div>
 

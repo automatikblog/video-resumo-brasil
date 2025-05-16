@@ -3,67 +3,69 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
-const plans = [
-  {
-    name: 'Gratuito',
-    price: 'R$ 0',
-    billing: 'para sempre',
-    description: 'Ideal para uso ocasional',
-    features: [
-      '3 resumos por dia',
-      'Vídeos de até 10 minutos',
-      'Resumos básicos',
-      'Suporte por email'
-    ],
-    popular: false,
-    buttonText: 'Começar grátis'
-  },
-  {
-    name: 'Pro',
-    price: 'R$ 19,90',
-    billing: 'por mês',
-    description: 'Perfeito para uso regular',
-    features: [
-      '30 resumos por dia',
-      'Vídeos de até 1 hora',
-      'Resumos detalhados',
-      'Salvamento de resumos',
-      'Suporte prioritário'
-    ],
-    popular: true,
-    buttonText: 'Compre agora!'
-  },
-  {
-    name: 'Empresarial',
-    price: 'R$ 49,90',
-    billing: 'por mês',
-    description: 'Para equipes e uso intenso',
-    features: [
-      'Resumos ilimitados',
-      'Vídeos de até 3 horas',
-      'Resumos avançados',
-      'Biblioteca de resumos ilimitada',
-      'API de integração',
-      'Suporte dedicado 24/7'
-    ],
-    popular: false,
-    buttonText: 'Contate-nos'
-  }
-];
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const currentLang = getCurrentLang();
+  
+  const plans = [
+    {
+      name: getLangString('freePlan', currentLang),
+      price: getLangString('freePrice', currentLang),
+      billing: getLangString('forever', currentLang),
+      description: getLangString('freeDesc', currentLang),
+      features: [
+        getLangString('feature3SummariesPerDay', currentLang),
+        getLangString('featureVideosUpTo10Min', currentLang),
+        getLangString('featureBasicTranscriptions', currentLang),
+        getLangString('featureEmailSupport', currentLang)
+      ],
+      popular: false,
+      buttonText: getLangString('startFree', currentLang)
+    },
+    {
+      name: getLangString('proPlan', currentLang),
+      price: getLangString('proPrice', currentLang),
+      billing: getLangString('perMonth', currentLang),
+      description: getLangString('proDesc', currentLang),
+      features: [
+        getLangString('feature30SummariesPerDay', currentLang),
+        getLangString('featureVideosUpTo1Hour', currentLang),
+        getLangString('featureDetailedTranscriptions', currentLang),
+        getLangString('featureSaveTranscriptions', currentLang),
+        getLangString('featurePrioritySupport', currentLang)
+      ],
+      popular: true,
+      buttonText: getLangString('buyNow', currentLang)
+    },
+    {
+      name: getLangString('businessPlan', currentLang),
+      price: getLangString('businessPrice', currentLang),
+      billing: getLangString('perMonth', currentLang),
+      description: getLangString('businessDesc', currentLang),
+      features: [
+        getLangString('featureUnlimitedSummaries', currentLang),
+        getLangString('featureVideosUpTo3Hours', currentLang),
+        getLangString('featureAdvancedTranscriptions', currentLang),
+        getLangString('featureUnlimitedLibrary', currentLang),
+        getLangString('featureAPIIntegration', currentLang),
+        getLangString('featureDedicatedSupport', currentLang)
+      ],
+      popular: false,
+      buttonText: getLangString('contactUs', currentLang)
+    }
+  ];
 
   return (
     <section id="precos" className="section-padding bg-gradient-to-b from-white to-accent/20">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Planos e <span className="gradient-text">Preços</span>
+            <span className="gradient-text">{getLangString('pricingTitle', currentLang)}</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Escolha o plano que melhor atende às suas necessidades.
+            {getLangString('pricingSubtitle', currentLang)}
           </p>
           
           <div className="flex items-center justify-center mb-8">
@@ -72,14 +74,14 @@ const Pricing = () => {
               className={`rounded-r-none ${billingCycle === 'monthly' ? 'bg-brand-purple hover:bg-brand-deepPurple' : ''}`}
               onClick={() => setBillingCycle('monthly')}
             >
-              Mensal
+              {getLangString('monthly', currentLang)}
             </Button>
             <Button
               variant={billingCycle === 'yearly' ? 'default' : 'outline'}
               className={`rounded-l-none ${billingCycle === 'yearly' ? 'bg-brand-purple hover:bg-brand-deepPurple' : ''}`}
               onClick={() => setBillingCycle('yearly')}
             >
-              Anual <Badge className="ml-2 bg-green-500 text-white">20% OFF</Badge>
+              {getLangString('yearly', currentLang)} <Badge className="ml-2 bg-green-500 text-white">{getLangString('discount', currentLang)}</Badge>
             </Button>
           </div>
         </div>
@@ -92,7 +94,7 @@ const Pricing = () => {
             >
               {plan.popular && (
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <Badge className="bg-brand-purple hover:bg-brand-deepPurple px-3 py-1 text-sm">Mais popular</Badge>
+                  <Badge className="bg-brand-purple hover:bg-brand-deepPurple px-3 py-1 text-sm">{getLangString('mostPopular', currentLang)}</Badge>
                 </div>
               )}
               
@@ -124,6 +126,7 @@ const Pricing = () => {
                     ? 'bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90' 
                     : ''}`}
                   variant={plan.popular ? 'default' : 'outline'}
+                  onClick={() => plan.name !== getLangString('freePlan', currentLang) && handleSubscribe(plan.name)}
                 >
                   {plan.buttonText}
                 </Button>
@@ -134,6 +137,12 @@ const Pricing = () => {
       </div>
     </section>
   );
+
+  function handleSubscribe(planName: string) {
+    // This will be connected to Stripe checkout later
+    console.log(`Subscribing to ${planName} plan`);
+    // We'll implement the Stripe checkout here
+  }
 };
 
 export default Pricing;

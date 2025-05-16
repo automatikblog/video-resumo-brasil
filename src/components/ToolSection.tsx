@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { saveYouTubeUrl, pollForVideoSummary } from '@/services/supabaseService';
@@ -17,6 +19,7 @@ const ToolSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [fingerprint, setFingerprint] = useState<string | null>(null);
   const [canUse, setCanUse] = useState<boolean>(true);
+  const [isPlaylist, setIsPlaylist] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const currentLang = getCurrentLang();
@@ -74,7 +77,7 @@ const ToolSection = () => {
 
     try {
       // Save the URL to Supabase with user info or fingerprint
-      const record = await saveYouTubeUrl(url, user?.id, fingerprint);
+      const record = await saveYouTubeUrl(url, user?.id, fingerprint, isPlaylist);
       toast.success(getLangString('videoSubmitted', currentLang));
       
       // Poll for the summary
@@ -133,6 +136,20 @@ const ToolSection = () => {
                 >
                   {isLoading ? getLangString('processing', currentLang) : getLangString('summarizeVideo', currentLang)}
                 </Button>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="playlist-mode"
+                  checked={isPlaylist}
+                  onCheckedChange={setIsPlaylist}
+                  disabled={isLoading || (!user && !canUse)}
+                />
+                <Label htmlFor="playlist-mode">
+                  {currentLang === 'en-US' ? 'This is a playlist' : 
+                   currentLang === 'es-ES' ? 'Esto es una lista de reproducción' : 
+                   'Isto é uma playlist'}
+                </Label>
               </div>
             </form>
 
