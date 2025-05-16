@@ -1,3 +1,4 @@
+
 // Available languages
 export type Language = 'pt-BR' | 'en-US' | 'es-ES';
 
@@ -47,9 +48,9 @@ const translations: Record<string, Record<Language, string>> = {
     'es-ES': 'Registrarse'
   },
   signUpForMore: {
-    'pt-BR': 'Cadastre-se para mais resumos',
-    'en-US': 'Sign up for more summaries',
-    'es-ES': 'Regístrese para más resúmenes'
+    'pt-BR': 'Cadastre-se para mais transcrições',
+    'en-US': 'Sign up for more transcriptions',
+    'es-ES': 'Regístrese para más transcripciones'
   },
   signOut: {
     'pt-BR': 'Sair',
@@ -74,19 +75,24 @@ const translations: Record<string, Record<Language, string>> = {
   
   // Tool section
   tryItNow: {
-    'pt-BR': 'Experimente',
-    'en-US': 'Try it',
-    'es-ES': 'Pruébelo'
+    'pt-BR': 'Experimente agora',
+    'en-US': 'Try it now',
+    'es-ES': 'Pruébelo ahora'
   },
   rightNow: {
     'pt-BR': 'agora mesmo',
     'en-US': 'right now',
     'es-ES': 'ahora mismo'
   },
+  learnMore: {
+    'pt-BR': 'Saiba mais',
+    'en-US': 'Learn more',
+    'es-ES': 'Más información'
+  },
   pasteAnyYouTubeLink: {
-    'pt-BR': 'Cole o link de qualquer vídeo ou playlist do YouTube e receba uma transcrição inteligente em segundos.',
-    'en-US': 'Paste any YouTube video or playlist link and receive an intelligent transcription in seconds.',
-    'es-ES': 'Pegue cualquier enlace de video o lista de reproducción de YouTube y reciba una transcripción inteligente en segundos.'
+    'pt-BR': 'Cole o link de qualquer vídeo ou playlist do YouTube e receba uma transcrição completa em segundos.',
+    'en-US': 'Paste any YouTube video or playlist link and receive a complete transcription in seconds.',
+    'es-ES': 'Pegue cualquier enlace de video o lista de reproducción de YouTube y reciba una transcripción completa en segundos.'
   },
   pasteYouTubeUrl: {
     'pt-BR': 'Cole a URL do YouTube aqui...',
@@ -98,7 +104,7 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Transcribe Video',
     'es-ES': 'Transcribir Video'
   },
-  // Fixed the duplicate "processing" key by adding a unique key name
+  // Fixed duplicate key
   processingVideo: {
     'pt-BR': 'Processando...',
     'en-US': 'Processing...',
@@ -220,7 +226,7 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Pending',
     'es-ES': 'Pendiente'
   },
-  // Using processingStatus instead of duplicate "processing" key
+  // Fixed duplicate key
   processingStatus: {
     'pt-BR': 'Processando',
     'en-US': 'Processing',
@@ -252,6 +258,30 @@ const translations: Record<string, Record<Language, string>> = {
     'pt-BR': 'Enviar',
     'en-US': 'Send',
     'es-ES': 'Enviar'
+  },
+  
+  // AI Chat responses
+  errorProcessingRequest: {
+    'pt-BR': 'Desculpe, tive problemas ao processar sua solicitação. Por favor, tente novamente mais tarde.',
+    'en-US': 'Sorry, I had trouble processing your request. Please try again later.',
+    'es-ES': 'Lo siento, tuve problemas al procesar su solicitud. Por favor, inténtelo de nuevo más tarde.'
+  },
+  noTranscriptionText: {
+    'pt-BR': 'Não há texto de transcrição disponível para analisar.',
+    'en-US': 'There is no transcription text available to analyze.',
+    'es-ES': 'No hay texto de transcripción disponible para analizar.'
+  },
+  
+  // New playlist features
+  isPlaylist: {
+    'pt-BR': 'Isto é uma playlist',
+    'en-US': 'This is a playlist',
+    'es-ES': 'Esto es una lista de reproducción'
+  },
+  playlistProcessing: {
+    'pt-BR': 'Processando playlist. Isso pode levar mais tempo que um único vídeo...',
+    'en-US': 'Processing playlist. This may take longer than a single video...',
+    'es-ES': 'Procesando lista de reproducción. Esto puede tomar más tiempo que un solo video...'
   },
   
   // Pricing Plans
@@ -439,6 +469,36 @@ const translations: Record<string, Record<Language, string>> = {
     'pt-BR': 'Suporte dedicado 24/7',
     'en-US': 'Dedicated 24/7 support',
     'es-ES': 'Soporte dedicado 24/7'
+  },
+  featureAIChat: {
+    'pt-BR': 'Chat com IA para consulta de transcrições',
+    'en-US': 'AI chat for transcription queries',
+    'es-ES': 'Chat con IA para consultas de transcripciones'
+  },
+  featurePlaylistSupport: {
+    'pt-BR': 'Suporte a playlists',
+    'en-US': 'Playlist support',
+    'es-ES': 'Soporte para listas de reproducción'
+  },
+  noSummaryAvailable: {
+    'pt-BR': 'Nenhuma transcrição disponível para este vídeo.',
+    'en-US': 'No transcription available for this video.',
+    'es-ES': 'No hay transcripción disponible para este video.'
+  },
+  summaryNotFound: {
+    'pt-BR': 'Transcrição Não Encontrada',
+    'en-US': 'Transcription Not Found',
+    'es-ES': 'Transcripción No Encontrada'
+  },
+  summaryNotFoundDescription: {
+    'pt-BR': 'A transcrição que você está procurando não existe.',
+    'en-US': 'The transcription you are looking for does not exist.',
+    'es-ES': 'La transcripción que está buscando no existe.'
+  },
+  goBackToDashboard: {
+    'pt-BR': 'Voltar para o Painel',
+    'en-US': 'Go Back to Dashboard',
+    'es-ES': 'Volver al Panel'
   }
 };
 

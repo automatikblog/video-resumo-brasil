@@ -51,51 +51,66 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     setInput('');
     setIsLoading(true);
     
-    // Here we would integrate with an AI model to process the question
-    // For now, we'll simulate a response
-    setTimeout(() => {
-      const response: Message = {
+    try {
+      // Call OpenAI API to process the question
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer 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',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that answers questions based on the following transcription. 
+              Be concise and accurate. Only use information from the transcription.
+              
+              TRANSCRIPTION:
+              ${transcriptionText}`
+            },
+            {
+              role: 'user',
+              content: input
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content || 
+        getLangString('errorProcessingRequest', currentLang) || 
+        "I couldn't process your request. Please try again.";
+
+      const assistantMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: simulateResponse(input, transcriptionText),
+        content: aiResponse,
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, response]);
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error calling AI API:', error);
+      
+      const errorMessage: Message = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: getLangString('errorProcessingRequest', currentLang) || 
+          "Sorry, I had trouble processing your request. Please try again later.",
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
-  };
-
-  // Simple function to simulate AI responses based on the question and transcription
-  const simulateResponse = (question: string, transcription: string): string => {
-    // This is a placeholder. In a real implementation, you would use an AI service
-    // to generate responses based on the transcription content.
-    const lowerQuestion = question.toLowerCase();
-    const lowerTranscription = transcription.toLowerCase();
-    
-    if (lowerQuestion.includes('what') && lowerQuestion.includes('about')) {
-      // Try to find a sentence with a keyword from the question
-      const keywords = lowerQuestion.split(' ').filter(word => word.length > 4);
-      for (const keyword of keywords) {
-        if (lowerTranscription.includes(keyword)) {
-          const sentences = transcription.split(/[.!?]+/);
-          const relevantSentences = sentences.filter(sentence => 
-            sentence.toLowerCase().includes(keyword)
-          );
-          if (relevantSentences.length > 0) {
-            return relevantSentences[0].trim() + '.';
-          }
-        }
-      }
-    }
-
-    // Default responses based on language
-    if (currentLang === 'en-US') {
-      return "Based on the transcription, I don't have specific information about that. Could you ask something else about the content?";
-    } else if (currentLang === 'es-ES') {
-      return "Según la transcripción, no tengo información específica sobre eso. ¿Podrías preguntar algo más sobre el contenido?";
-    } else {
-      return "Com base na transcrição, não tenho informações específicas sobre isso. Você poderia perguntar algo mais sobre o conteúdo?";
     }
   };
 
@@ -133,7 +148,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
                     </Avatar>
                   )}
                   <div>
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     <p className="text-xs opacity-60 mt-1">
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>

@@ -45,7 +45,7 @@ const ToolSection = () => {
     };
 
     initFingerprint();
-  }, [user]);
+  }, [user, currentLang]);
 
   const isValidYouTubeUrl = (url: string) => {
     const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
@@ -76,10 +76,16 @@ const ToolSection = () => {
     setSummary(null);
 
     try {
-      // Fix: Save the URL to Supabase with correct arguments
-      // We need to pass isPlaylist as the third argument
+      // Save the URL to Supabase with correct arguments
       const record = await saveYouTubeUrl(url, user?.id || null, fingerprint, isPlaylist);
-      toast.success(getLangString('videoSubmitted', currentLang));
+      
+      // Show appropriate message based on content type
+      if (isPlaylist) {
+        toast.success(getLangString('videoSubmitted', currentLang));
+        toast.info(getLangString('playlistProcessing', currentLang) || 'Processing playlist. This may take longer than a single video...');
+      } else {
+        toast.success(getLangString('videoSubmitted', currentLang));
+      }
       
       // Poll for the summary
       const summaryResult = await pollForVideoSummary(record.id);
@@ -87,6 +93,8 @@ const ToolSection = () => {
       if (summaryResult?.summary) {
         setSummary(summaryResult.summary);
         toast.success(getLangString('summaryGeneratedSuccess', currentLang));
+        // Navigate to the summary page
+        navigate(`/summary/${record.id}`);
       } else {
         setError(getLangString('summaryGenerationFailed', currentLang));
         toast.error(getLangString('summaryGenerationError', currentLang));
@@ -135,7 +143,7 @@ const ToolSection = () => {
                   className="bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity h-12"
                   disabled={isLoading || (!user && !canUse)}
                 >
-                  {isLoading ? getLangString('processing', currentLang) : getLangString('summarizeVideo', currentLang)}
+                  {isLoading ? getLangString('processingVideo', currentLang) : getLangString('summarizeVideo', currentLang)}
                 </Button>
               </div>
               
@@ -147,9 +155,7 @@ const ToolSection = () => {
                   disabled={isLoading || (!user && !canUse)}
                 />
                 <Label htmlFor="playlist-mode">
-                  {currentLang === 'en-US' ? 'This is a playlist' : 
-                   currentLang === 'es-ES' ? 'Esto es una lista de reproducción' : 
-                   'Isto é uma playlist'}
+                  {getLangString('isPlaylist', currentLang)}
                 </Label>
               </div>
             </form>
@@ -173,7 +179,9 @@ const ToolSection = () => {
                   <span className="sr-only">{getLangString('loading', currentLang)}</span>
                 </div>
                 <p className="mt-4 text-lg text-muted-foreground">
-                  {getLangString('processingYourVideo', currentLang)}
+                  {isPlaylist 
+                    ? getLangString('playlistProcessing', currentLang) 
+                    : getLangString('processingYourVideo', currentLang)}
                 </p>
               </div>
             )}

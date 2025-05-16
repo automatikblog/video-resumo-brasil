@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,12 @@ import { toast } from 'sonner';
 const Header = () => {
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const currentLang = getCurrentLang();
+  const [currentLang, setCurrentLang] = useState(getCurrentLang());
+
+  // Add effect to update current language when it changes
+  useEffect(() => {
+    setCurrentLang(getCurrentLang());
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -37,6 +42,7 @@ const Header = () => {
 
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
+    setCurrentLang(lang); // Update current language state immediately
     // Force page refresh to apply language change
     window.location.reload();
   };
