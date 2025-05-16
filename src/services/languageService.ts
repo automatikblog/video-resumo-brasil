@@ -104,7 +104,6 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Transcribe Video',
     'es-ES': 'Transcribir Video'
   },
-  // Fixed duplicate key
   processingVideo: {
     'pt-BR': 'Processando...',
     'en-US': 'Processing...',
@@ -226,7 +225,6 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Pending',
     'es-ES': 'Pendiente'
   },
-  // Fixed duplicate key
   processingStatus: {
     'pt-BR': 'Processando',
     'en-US': 'Processing',

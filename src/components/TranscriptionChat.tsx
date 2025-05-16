@@ -52,7 +52,12 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     setIsLoading(true);
     
     try {
-      // Call OpenAI API to process the question
+      // Check if we have enough content
+      if (!transcriptionText || transcriptionText.trim().length < 10) {
+        throw new Error('Not enough content to analyze');
+      }
+      
+      // Call Perplexity API to process the question
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
@@ -65,7 +70,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
             {
               role: 'system',
               content: `You are an assistant that answers questions based on the following transcription. 
-              Be concise and accurate. Only use information from the transcription.
+              Be helpful, concise and provide specific information from the transcription when possible.
               
               TRANSCRIPTION:
               ${transcriptionText}`
@@ -81,13 +86,18 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       });
 
       if (!response.ok) {
-        throw new Error('API request failed');
+        throw new Error('API request failed with status: ' + response.status);
       }
 
       const data = await response.json();
-      const aiResponse = data.choices?.[0]?.message?.content || 
-        getLangString('errorProcessingRequest', currentLang) || 
-        "I couldn't process your request. Please try again.";
+      
+      // Check if the response has the expected structure
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid API response structure');
+      }
+      
+      const aiResponse = data.choices[0].message.content || 
+        getLangString('errorProcessingRequest', currentLang);
 
       const assistantMessage: Message = {
         id: Date.now() + 1,

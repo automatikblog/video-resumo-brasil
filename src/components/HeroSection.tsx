@@ -16,41 +16,68 @@ const HeroSection = () => {
     document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const renderHeroTitle = () => {
+    switch(currentLang) {
+      case 'en-US':
+        return (
+          <>
+            <span>Save time with </span>
+            <span className="gradient-text">YouTube video</span>
+            <span> transcriptions</span>
+          </>
+        );
+      case 'es-ES':
+        return (
+          <>
+            <span>Ahorre tiempo con </span>
+            <span className="gradient-text">transcripciones de vídeos</span>
+            <span> de YouTube</span>
+          </>
+        );
+      default: // Portuguese
+        return (
+          <>
+            <span>Economize tempo com </span>
+            <span className="gradient-text">transcrições de vídeos</span>
+            <span> do YouTube</span>
+          </>
+        );
+    }
+  };
+
+  const renderHeroDescription = () => {
+    switch(currentLang) {
+      case 'en-US':
+        return 'Get full transcriptions of any video or playlist and interact with the content using AI.';
+      case 'es-ES':
+        return 'Obtenga transcripciones completas de cualquier video o lista de reproducción e interactúe con el contenido usando IA.';
+      default: // Portuguese
+        return 'Obtenha transcrições completas de qualquer vídeo ou playlist e interaja com o conteúdo usando IA.';
+    }
+  };
+
+  const renderUserCount = () => {
+    switch(currentLang) {
+      case 'en-US':
+        return '+3,500 users trust us';
+      case 'es-ES':
+        return '+3.500 usuarios confían en nosotros';
+      default: // Portuguese
+        return '+3.500 usuários confiam em nós';
+    }
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white to-accent/20 section-padding pt-24">
       <div className="container-width">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 animate-fade-in">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tighter">
-              {currentLang === 'en-US' ? (
-                <>
-                  <span>Save time with </span>
-                  <span className="gradient-text">YouTube video</span>
-                  <span> transcriptions</span>
-                </>
-              ) : currentLang === 'es-ES' ? (
-                <>
-                  <span>Ahorre tiempo con </span>
-                  <span className="gradient-text">transcripciones de vídeos</span>
-                  <span> de YouTube</span>
-                </>
-              ) : (
-                <>
-                  <span>Economize tempo com </span>
-                  <span className="gradient-text">transcrições de vídeos</span>
-                  <span> do YouTube</span>
-                </>
-              )}
+              {renderHeroTitle()}
             </h1>
             
             <p className="text-xl text-muted-foreground md:text-2xl">
-              {currentLang === 'en-US' ? (
-                'Get full transcriptions of any video or playlist and interact with the content using AI.'
-              ) : currentLang === 'es-ES' ? (
-                'Obtenga transcripciones completas de cualquier video o lista de reproducción e interactúe con el contenido usando IA.'
-              ) : (
-                'Obtenha transcrições completas de qualquer vídeo ou playlist e interaja com o conteúdo usando IA.'
-              )}
+              {renderHeroDescription()}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -65,7 +92,7 @@ const HeroSection = () => {
                 className="text-lg py-6 px-8"
                 onClick={handleLearnMore}
               >
-                {getLangString('learnMore', currentLang) || 'Learn More'}
+                {getLangString('learnMore', currentLang)}
               </Button>
             </div>
             
@@ -76,13 +103,7 @@ const HeroSection = () => {
                 <div className="w-8 h-8 rounded-full bg-brand-deepPurple flex items-center justify-center text-white">RF</div>
               </div>
               <span className="text-sm">
-                {currentLang === 'en-US' ? (
-                  '+3,500 users trust us'
-                ) : currentLang === 'es-ES' ? (
-                  '+3.500 usuarios confían en nosotros'
-                ) : (
-                  '+3.500 usuários confiam em nós'
-                )}
+                {renderUserCount()}
               </span>
             </div>
           </div>
@@ -110,13 +131,11 @@ const HeroSection = () => {
             <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2">
               <div className="bg-white rounded-lg shadow-lg p-4 w-40 animate-bounce-slow">
                 <p className="text-xs font-semibold text-center">
-                  {currentLang === 'en-US' ? (
-                    'Full transcription in less than a minute!'
-                  ) : currentLang === 'es-ES' ? (
-                    '¡Transcripción completa en menos de un minuto!'
-                  ) : (
-                    'Transcrição completa em menos de um minuto!'
-                  )}
+                  {currentLang === 'en-US' ? 
+                    'Full transcription in less than a minute!' : 
+                    currentLang === 'es-ES' ? 
+                      '¡Transcripción completa en menos de un minuto!' : 
+                      'Transcrição completa em menos de um minuto!'}
                 </p>
               </div>
             </div>
