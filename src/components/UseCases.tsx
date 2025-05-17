@@ -1,64 +1,67 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-
-const useCases = [
-  {
-    title: 'Estudantes',
-    description: 'Economize tempo nos estudos resumindo vídeo-aulas e palestras, potencializando seu aprendizado.',
-    icon: (
-      <svg className="w-20 h-20 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5" />
-      </svg>
-    ),
-    examples: [
-      'Resumos de vídeo-aulas',
-      'Preparação para exames',
-      'Pesquisa acadêmica'
-    ]
-  },
-  {
-    title: 'Profissionais',
-    description: 'Mantenha-se atualizado em sua área, resumindo webinars, conferências e treinamentos profissionais.',
-    icon: (
-      <svg className="w-20 h-20 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-    examples: [
-      'Análise de webinars',
-      'Conferências do setor',
-      'Treinamentos corporativos'
-    ]
-  },
-  {
-    title: 'Criadores de Conteúdo',
-    description: 'Analise vídeos concorrentes, extraia ideias e mantenha-se informado sobre tendências do mercado.',
-    icon: (
-      <svg className="w-20 h-20 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-      </svg>
-    ),
-    examples: [
-      'Pesquisa de tendências',
-      'Análise de concorrentes',
-      'Desenvolvimento de conteúdo'
-    ]
-  }
-];
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const UseCases = () => {
+  const currentLang = getCurrentLang();
+  
+  const useCases = [
+    {
+      title: getLangString('useCaseStudents', currentLang),
+      description: getLangString('useCaseStudentsDesc', currentLang),
+      icon: (
+        <svg className="w-20 h-20 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5" />
+        </svg>
+      ),
+      examples: [
+        getLangString('useCaseStudentsExample1', currentLang),
+        getLangString('useCaseStudentsExample2', currentLang),
+        getLangString('useCaseStudentsExample3', currentLang)
+      ]
+    },
+    {
+      title: getLangString('useCaseProfessionals', currentLang),
+      description: getLangString('useCaseProfessionalsDesc', currentLang),
+      icon: (
+        <svg className="w-20 h-20 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      examples: [
+        getLangString('useCaseProfessionalsExample1', currentLang),
+        getLangString('useCaseProfessionalsExample2', currentLang),
+        getLangString('useCaseProfessionalsExample3', currentLang)
+      ]
+    },
+    {
+      title: getLangString('useCaseCreators', currentLang),
+      description: getLangString('useCaseCreatorsDesc', currentLang),
+      icon: (
+        <svg className="w-20 h-20 text-brand-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      ),
+      examples: [
+        getLangString('useCaseCreatorsExample1', currentLang),
+        getLangString('useCaseCreatorsExample2', currentLang),
+        getLangString('useCaseCreatorsExample3', currentLang)
+      ]
+    }
+  ];
+
   return (
     <section id="casos" className="section-padding bg-white">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="gradient-text">Casos de Uso</span>
+            <span className="gradient-text">{getLangString('useCasesTitle', currentLang)}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Descubra como diferentes públicos estão economizando tempo com nossa ferramenta.
+            {getLangString('useCasesSubtitle', currentLang)}
           </p>
         </div>
 
@@ -73,7 +76,7 @@ const UseCases = () => {
                   <h3 className="text-2xl font-bold mb-4">{useCase.title}</h3>
                   <p className="text-muted-foreground mb-6">{useCase.description}</p>
                   
-                  <h4 className="font-semibold text-lg mb-3">Ideal para:</h4>
+                  <h4 className="font-semibold text-lg mb-3">{getLangString('idealFor', currentLang)}:</h4>
                   <ul className="space-y-2">
                     {useCase.examples.map((example, idx) => (
                       <li key={idx} className="flex items-center">

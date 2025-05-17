@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 import { getCurrentLang, getLangString } from '@/services/languageService';
 
 interface Message {
@@ -89,13 +90,16 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       });
 
       if (!response.ok) {
+        console.error('API error:', response.status, response.statusText);
         throw new Error('API request failed with status: ' + response.status);
       }
 
       const data = await response.json();
+      console.log('API response:', data);
       
       // Check if the response has the expected structure
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error('Invalid API response structure:', data);
         throw new Error('Invalid API response structure');
       }
       
@@ -112,12 +116,12 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error calling AI API:', error);
+      toast.error(getLangString('errorProcessingRequest', currentLang));
       
       const errorMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: getLangString('errorProcessingRequest', currentLang) || 
-          "Sorry, I had trouble processing your request. Please try again later.",
+        content: getLangString('errorProcessingRequest', currentLang),
         timestamp: new Date(),
       };
       

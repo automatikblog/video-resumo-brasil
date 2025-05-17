@@ -1,38 +1,41 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-
-const testimonials = [
-  {
-    content: 'Esta ferramenta revolucionou meus estudos! Consigo assimilar o conteúdo de horas de aulas em apenas alguns minutos de leitura.',
-    author: 'Mariana Silva',
-    title: 'Estudante de Medicina',
-    avatar: '👩‍⚕️'
-  },
-  {
-    content: 'Como profissional ocupado, não tenho tempo para assistir webinars de 2 horas. Com o VideoSumário, consigo extrair os pontos principais em segundos.',
-    author: 'Ricardo Oliveira',
-    title: 'Gerente de Projetos',
-    avatar: '👨‍💼'
-  },
-  {
-    content: 'Uso para analisar conteúdos da concorrência e economizo horas de trabalho. A precisão dos resumos é impressionante!',
-    author: 'Camila Santos',
-    title: 'Criadora de Conteúdo',
-    avatar: '👩‍💻'
-  }
-];
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const Testimonials = () => {
+  const currentLang = getCurrentLang();
+  
+  const testimonials = [
+    {
+      content: getLangString('testimonial1Content', currentLang),
+      author: getLangString('testimonial1Author', currentLang),
+      title: getLangString('testimonial1Title', currentLang),
+      avatar: '👩‍⚕️'
+    },
+    {
+      content: getLangString('testimonial2Content', currentLang),
+      author: getLangString('testimonial2Author', currentLang),
+      title: getLangString('testimonial2Title', currentLang),
+      avatar: '👨‍💼'
+    },
+    {
+      content: getLangString('testimonial3Content', currentLang),
+      author: getLangString('testimonial3Author', currentLang),
+      title: getLangString('testimonial3Title', currentLang),
+      avatar: '👩‍💻'
+    }
+  ];
+
   return (
     <section className="section-padding bg-white">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            O que nossos <span className="gradient-text">usuários dizem</span>
+            {getLangString('testimonialTitle', currentLang)} <span className="gradient-text">{getLangString('testimonialTitleHighlight', currentLang)}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Veja como nossa ferramenta tem ajudado pessoas de diferentes áreas a economizar tempo.
+            {getLangString('testimonialSubtitle', currentLang)}
           </p>
         </div>
 
