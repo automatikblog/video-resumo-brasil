@@ -6,52 +6,55 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-const faqs = [
-  {
-    question: 'Quais idiomas são suportados?',
-    answer: 'Atualmente, nossa ferramenta suporta vídeos em Português (Brasil), Inglês, Espanhol e Francês. Estamos trabalhando para adicionar mais idiomas em breve.'
-  },
-  {
-    question: 'Existe limite de duração para os vídeos?',
-    answer: 'O plano gratuito permite resumir vídeos de até 10 minutos. Os planos pagos permitem resumir vídeos de até 3 horas, dependendo do plano assinado.'
-  },
-  {
-    question: 'Como meus dados são protegidos?',
-    answer: 'Valorizamos sua privacidade. Não armazenamos o conteúdo dos vídeos processados e todos os resumos gerados são excluídos após 7 dias. Para mais detalhes, consulte nossa Política de Privacidade.'
-  },
-  {
-    question: 'Posso usar a ferramenta em dispositivos móveis?',
-    answer: 'Sim! Nossa ferramenta é totalmente responsiva e funciona em qualquer dispositivo com acesso à internet, incluindo smartphones e tablets.'
-  },
-  {
-    question: 'Os resumos são gerados por IA?',
-    answer: 'Sim, utilizamos tecnologia avançada de Inteligência Artificial para analisar o conteúdo dos vídeos e gerar resumos concisos e precisos.'
-  },
-  {
-    question: 'É possível salvar os resumos gerados?',
-    answer: 'Sim, os usuários cadastrados podem salvar e acessar seus resumos a qualquer momento na área de usuário. Os resumos ficam disponíveis por 30 dias nos planos gratuitos e permanentemente nos planos premium.'
-  },
-  {
-    question: 'Quantos resumos posso gerar por dia?',
-    answer: 'O plano gratuito permite gerar até 3 resumos por dia. Os planos pagos oferecem entre 30 e resumos ilimitados por dia, dependendo do plano escolhido.'
-  },
-  {
-    question: 'Funciona com vídeos privados ou não listados?',
-    answer: 'No momento, nossa ferramenta funciona apenas com vídeos públicos do YouTube. Não é possível processar vídeos privados ou que exijam login para visualização.'
-  }
-];
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const FAQ = () => {
+  const currentLang = getCurrentLang();
+
+  const faqs = [
+    {
+      question: getLangString('faqQuestion1', currentLang),
+      answer: getLangString('faqAnswer1', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion2', currentLang),
+      answer: getLangString('faqAnswer2', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion3', currentLang),
+      answer: getLangString('faqAnswer3', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion4', currentLang),
+      answer: getLangString('faqAnswer4', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion5', currentLang),
+      answer: getLangString('faqAnswer5', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion6', currentLang),
+      answer: getLangString('faqAnswer6', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion7', currentLang),
+      answer: getLangString('faqAnswer7', currentLang)
+    },
+    {
+      question: getLangString('faqQuestion8', currentLang),
+      answer: getLangString('faqAnswer8', currentLang)
+    }
+  ];
+
   return (
     <section id="faq" className="section-padding bg-accent/10">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Perguntas <span className="gradient-text">Frequentes</span>
+            <span className="gradient-text">{getLangString('faqTitle', currentLang)}</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Encontre respostas para as dúvidas mais comuns sobre nossa ferramenta.
+            {getLangString('faqSubtitle', currentLang)}
           </p>
         </div>
 
