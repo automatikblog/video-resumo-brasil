@@ -505,7 +505,8 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Our',
     'es-ES': 'Nuestras'
   },
-  features: {
+  // Fix the duplicate 'features' key by renaming to 'featuresLabel'
+  featuresLabel: {
     'pt-BR': 'Recursos',
     'en-US': 'Features',
     'es-ES': 'Características'
