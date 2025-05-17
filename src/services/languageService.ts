@@ -1,3 +1,4 @@
+
 // Available languages
 export type Language = 'pt-BR' | 'en-US' | 'es-ES';
 
@@ -793,7 +794,7 @@ const translations: Record<string, Record<Language, string>> = {
   faqQuestion6: {
     'pt-BR': 'É possível salvar os resumos gerados?',
     'en-US': 'Is it possible to save the generated summaries?',
-    'es-ES': '¿Es posible guardar los resumos generados?'
+    'es-ES': '¿Es posible guardar los resúmenes generados?'
   },
   faqAnswer6: {
     'pt-BR': 'Sim, os usuários cadastrados podem salvar e acessar seus resumos a qualquer momento na área de usuário. Os resumos ficam disponíveis por 30 dias nos planos gratuitos e permanentemente nos planos premium.',
@@ -803,12 +804,12 @@ const translations: Record<string, Record<Language, string>> = {
   faqQuestion7: {
     'pt-BR': 'Quantos resumos posso gerar por dia?',
     'en-US': 'How many summaries can I generate per day?',
-    'es-ES': '¿Cuántos resumos puedo generar por día?'
+    'es-ES': '¿Cuántos resúmenes puedo generar por día?'
   },
   faqAnswer7: {
     'pt-BR': 'O plano gratuito permite gerar até 3 resumos por dia. Os planos pagos oferecem entre 30 e resumos ilimitados por dia, dependendo do plano escolhido.',
     'en-US': 'The free plan allows you to generate up to 3 summaries per day. Paid plans offer between 30 and unlimited summaries per day, depending on the chosen plan.',
-    'es-ES': 'El plan gratuito le permite generar hasta 3 resumos por día. Los planes pagos ofrecen entre 30 y resúmenes ilimitados por día, dependiendo del plan elegido.'
+    'es-ES': 'El plan gratuito le permite generar hasta 3 resúmenes por día. Los planes pagos ofrecen entre 30 y resúmenes ilimitados por día, dependiendo del plan elegido.'
   },
   faqQuestion8: {
     'pt-BR': 'Funciona com vídeos privados ou não listados?',
