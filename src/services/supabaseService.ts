@@ -12,6 +12,7 @@ interface VideoSummary {
   user_id?: string | null;
   fingerprint?: string | null;
   is_playlist?: boolean;
+  error_message?: string;
 }
 
 /**
@@ -76,7 +77,10 @@ const triggerSummaryGeneration = async (id: string, url: string): Promise<void> 
     });
 
     if (!response.ok) {
-      throw new Error(`Webhook returned status ${response.status}`);
+      console.error(`Webhook returned status ${response.status}`);
+      const errorText = await response.text();
+      console.error('Webhook error details:', errorText);
+      throw new Error(`Webhook returned status ${response.status}: ${errorText}`);
     }
 
     console.log('Successfully triggered summary generation');
@@ -96,7 +100,8 @@ export const resumeVideoProcessing = async (id: string, url: string, isPlaylist:
     .from('video_summaries')
     .update({ 
       status: 'pending',
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      error_message: null // Clear any previous error message
     })
     .eq('id', id);
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,6 +5,7 @@ import { getUserSummaries, resumeVideoProcessing } from '@/services/supabaseServ
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import VideoInput from '@/components/VideoInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -64,6 +64,13 @@ const Dashboard = () => {
     if (user) {
       fetchSummaries();
     }
+
+    // Set up auto-refresh every minute
+    const refreshInterval = setInterval(() => {
+      if (user) fetchSummaries();
+    }, 60000);
+
+    return () => clearInterval(refreshInterval);
   }, [user]);
 
   const getDateLocale = () => {
@@ -170,106 +177,110 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <Card className="shadow-lg border-border/50">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold gradient-text">
-              {getLangString('yourSummaries', currentLang)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {summaries.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">{getLangString('noSummariesYet', currentLang)}</p>
-                <Button 
-                  onClick={handleCreateNew}
-                  className="bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity"
-                >
-                  {getLangString('createYourFirst', currentLang)}
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{getLangString('videoTitle', currentLang)}</TableHead>
-                      <TableHead>{getLangString('createdAt', currentLang)}</TableHead>
-                      <TableHead>{getLangString('status', currentLang)}</TableHead>
-                      <TableHead>{getLangString('type', currentLang) || 'Type'}</TableHead>
-                      <TableHead className="text-right">{getLangString('actions', currentLang) || 'Actions'}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {summaries.map((summary) => (
-                      <TableRow key={summary.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            {getThumbnailUrl(summary.youtube_url) && (
-                              <img 
-                                src={getThumbnailUrl(summary.youtube_url) || ''} 
-                                alt={`Thumbnail`} 
-                                className="h-12 w-20 object-cover rounded"
-                              />
-                            )}
-                            <div className="truncate max-w-[300px]">
-                              <a 
-                                href={summary.youtube_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="hover:underline"
-                              >
-                                {summary.youtube_url}
-                              </a>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{formatDate(summary.created_at)}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(summary.status)}`}>
-                            {getStatusLabel(summary.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {summary.is_playlist ? 
-                            (getLangString('playlist', currentLang) || 'Playlist') : 
-                            (getLangString('video', currentLang) || 'Video')
-                          }
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleViewSummary(summary.id)}
-                              disabled={summary.status !== 'completed'}
-                            >
-                              {getLangString('viewSummary', currentLang)}
-                            </Button>
-                            
-                            {canBeResumed(summary.status) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleResumeProcessing(summary.id, summary.youtube_url, summary.is_playlist || false)}
-                                disabled={processingIds.includes(summary.id)}
-                                className="bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-800"
-                              >
-                                {processingIds.includes(summary.id) ? 
-                                  (getLangString('resuming', currentLang) || 'Resuming...') : 
-                                  (getLangString('resume', currentLang) || 'Resume')
-                                }
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6 gradient-text">{getLangString('dashboard', currentLang) || 'Dashboard'}</h1>
+          
+          {/* Video Input Component */}
+          <VideoInput />
+          
+          <Card className="shadow-lg border-border/50">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold">
+                {getLangString('yourSummaries', currentLang)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {summaries.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground mb-4">{getLangString('noSummariesYet', currentLang)}</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{getLangString('videoTitle', currentLang)}</TableHead>
+                        <TableHead>{getLangString('createdAt', currentLang)}</TableHead>
+                        <TableHead>{getLangString('status', currentLang)}</TableHead>
+                        <TableHead>{getLangString('type', currentLang) || 'Type'}</TableHead>
+                        <TableHead className="text-right">{getLangString('actions', currentLang) || 'Actions'}</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {summaries.map((summary) => (
+                        <TableRow key={summary.id} className="cursor-pointer hover:bg-muted/70">
+                          <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
+                            <div className="flex items-center space-x-3">
+                              {getThumbnailUrl(summary.youtube_url) && (
+                                <img 
+                                  src={getThumbnailUrl(summary.youtube_url) || ''} 
+                                  alt={`Thumbnail`} 
+                                  className="h-12 w-20 object-cover rounded"
+                                />
+                              )}
+                              <div className="truncate max-w-[300px]">
+                                <a 
+                                  href={summary.youtube_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {summary.youtube_url}
+                                </a>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
+                            {formatDate(summary.created_at)}
+                          </TableCell>
+                          <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(summary.status)}`}>
+                              {getStatusLabel(summary.status)}
+                            </span>
+                          </TableCell>
+                          <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
+                            {summary.is_playlist ? 
+                              (getLangString('playlist', currentLang) || 'Playlist') : 
+                              (getLangString('video', currentLang) || 'Video')
+                            }
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleViewSummary(summary.id)}
+                                disabled={summary.status !== 'completed'}
+                              >
+                                {getLangString('viewSummary', currentLang) || 'View'}
+                              </Button>
+                              
+                              {canBeResumed(summary.status) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleResumeProcessing(summary.id, summary.youtube_url, summary.is_playlist || false)}
+                                  disabled={processingIds.includes(summary.id)}
+                                  className="bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-800"
+                                >
+                                  {processingIds.includes(summary.id) ? 
+                                    (getLangString('resuming', currentLang) || 'Resuming...') : 
+                                    (getLangString('resume', currentLang) || 'Resume')
+                                  }
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
       <Footer />
     </div>
