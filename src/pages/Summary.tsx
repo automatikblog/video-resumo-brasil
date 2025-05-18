@@ -8,6 +8,7 @@ import { getVideoSummary } from '@/services/supabaseService';
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import ExportTranscriptButton from '@/components/ExportTranscriptButton';
 
 interface VideoSummary {
   id: string;
@@ -89,10 +90,16 @@ const Summary = () => {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <Card className="shadow-lg border-border/50">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-2xl font-bold gradient-text">
               {getLangString('videoSummary', currentLang)}
             </CardTitle>
+            {summaryData?.summary && (
+              <ExportTranscriptButton 
+                transcriptId={summaryData.id} 
+                className="ml-auto"
+              />
+            )}
           </CardHeader>
           <CardContent>
             {summaryData?.summary ? (
