@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { saveYouTubeUrl, pollForVideoSummary } from '@/services/supabaseService';
@@ -19,7 +17,6 @@ const ToolSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [fingerprint, setFingerprint] = useState<string | null>(null);
   const [canUse, setCanUse] = useState<boolean>(true);
-  const [isPlaylist, setIsPlaylist] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const currentLang = getCurrentLang();
@@ -52,6 +49,10 @@ const ToolSection = () => {
     return regex.test(url);
   };
 
+  const isPlaylistUrl = (url: string) => {
+    return url.includes('playlist?list=') || url.includes('&list=');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -76,6 +77,9 @@ const ToolSection = () => {
     setSummary(null);
 
     try {
+      // Automatically detect if the URL is a playlist
+      const isPlaylist = isPlaylistUrl(url);
+      
       // Save the URL to Supabase with correct arguments
       const record = await saveYouTubeUrl(url, user?.id || null, fingerprint, isPlaylist);
       
@@ -147,16 +151,13 @@ const ToolSection = () => {
                 </Button>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="playlist-mode"
-                  checked={isPlaylist}
-                  onCheckedChange={setIsPlaylist}
-                  disabled={isLoading || (!user && !canUse)}
-                />
-                <Label htmlFor="playlist-mode">
-                  {getLangString('isPlaylist', currentLang)}
-                </Label>
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
+                <p>
+                  {getLangString('automaticDetection', currentLang) || 'Our system automatically detects video and playlist links.'} 
+                  {isPlaylistUrl(url) && (
+                    <span className="font-medium"> {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}</span>
+                  )}
+                </p>
               </div>
             </form>
 
@@ -179,7 +180,7 @@ const ToolSection = () => {
                   <span className="sr-only">{getLangString('loading', currentLang)}</span>
                 </div>
                 <p className="mt-4 text-lg text-muted-foreground">
-                  {isPlaylist 
+                  {isPlaylistUrl(url) 
                     ? getLangString('playlistProcessing', currentLang) 
                     : getLangString('processingYourVideo', currentLang)}
                 </p>

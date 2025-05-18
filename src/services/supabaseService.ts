@@ -11,6 +11,7 @@ interface VideoSummary {
   updated_at: string;
   user_id?: string | null;
   fingerprint?: string | null;
+  is_playlist?: boolean;
 }
 
 /**
@@ -84,6 +85,28 @@ const triggerSummaryGeneration = async (id: string, url: string): Promise<void> 
     // We're not rethrowing here as we want the UI to continue showing the pending status
     // The webhook might still process the request despite the error
   }
+};
+
+/**
+ * Resume processing a video or playlist that previously failed
+ */
+export const resumeVideoProcessing = async (id: string, url: string, isPlaylist: boolean = false): Promise<void> => {
+  // First update the record status
+  const { error: updateError } = await supabase
+    .from('video_summaries')
+    .update({ 
+      status: 'pending',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id);
+
+  if (updateError) {
+    console.error('Error updating video status:', updateError);
+    throw new Error('Failed to update video status');
+  }
+
+  // Then trigger the webhook to process it again
+  await triggerSummaryGeneration(id, url);
 };
 
 /**

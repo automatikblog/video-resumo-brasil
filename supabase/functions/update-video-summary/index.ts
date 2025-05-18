@@ -10,6 +10,7 @@ interface UpdateSummaryRequest {
   id: string;        // The UUID of the record to update
   summary: string;   // The summary text
   status?: string;   // Optional status update
+  is_playlist?: boolean; // Whether this is a playlist summary
 }
 
 // Create a Supabase client with the Admin key
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { id, summary, status = 'completed' } = await req.json() as UpdateSummaryRequest;
+    const { id, summary, status = 'completed', is_playlist = false } = await req.json() as UpdateSummaryRequest;
 
     if (!id) {
       return new Response(
@@ -47,6 +48,7 @@ Deno.serve(async (req) => {
       .update({ 
         summary, 
         status,
+        is_playlist,
         updated_at: new Date().toISOString() 
       })
       .eq('id', id);

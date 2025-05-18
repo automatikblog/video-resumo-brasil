@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { getUserSummaries } from '@/services/supabaseService';
+import { getUserSummaries, resumeVideoProcessing } from '@/services/supabaseService';
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface VideoSummary {
   id: string;
@@ -27,12 +28,14 @@ interface VideoSummary {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;
+  is_playlist?: boolean;
 }
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const [summaries, setSummaries] = useState<VideoSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [processingIds, setProcessingIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const currentLang = getCurrentLang();
 
@@ -128,6 +131,31 @@ const Dashboard = () => {
     navigate('/');
   };
 
+  const handleResumeProcessing = async (id: string, url: string, isPlaylist: boolean = false) => {
+    try {
+      setProcessingIds(prev => [...prev, id]);
+      await resumeVideoProcessing(id, url, isPlaylist);
+      toast.success(getLangString('processingResumed', currentLang) || 'Processing resumed');
+      
+      // Refresh summaries list after a delay to see the updated status
+      setTimeout(async () => {
+        if (user) {
+          const data = await getUserSummaries(user.id);
+          setSummaries(data);
+        }
+        setProcessingIds(prev => prev.filter(itemId => itemId !== id));
+      }, 2000);
+    } catch (error) {
+      console.error('Error resuming processing:', error);
+      toast.error(getLangString('resumeError', currentLang) || 'Failed to resume processing');
+      setProcessingIds(prev => prev.filter(itemId => itemId !== id));
+    }
+  };
+
+  const canBeResumed = (status: string) => {
+    return status === 'failed' || status === 'pending';
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -167,6 +195,7 @@ const Dashboard = () => {
                       <TableHead>{getLangString('videoTitle', currentLang)}</TableHead>
                       <TableHead>{getLangString('createdAt', currentLang)}</TableHead>
                       <TableHead>{getLangString('status', currentLang)}</TableHead>
+                      <TableHead>{getLangString('type', currentLang) || 'Type'}</TableHead>
                       <TableHead className="text-right">{getLangString('actions', currentLang) || 'Actions'}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -200,15 +229,38 @@ const Dashboard = () => {
                             {getStatusLabel(summary.status)}
                           </span>
                         </TableCell>
+                        <TableCell>
+                          {summary.is_playlist ? 
+                            (getLangString('playlist', currentLang) || 'Playlist') : 
+                            (getLangString('video', currentLang) || 'Video')
+                          }
+                        </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleViewSummary(summary.id)}
-                            disabled={summary.status !== 'completed'}
-                          >
-                            {getLangString('viewSummary', currentLang)}
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleViewSummary(summary.id)}
+                              disabled={summary.status !== 'completed'}
+                            >
+                              {getLangString('viewSummary', currentLang)}
+                            </Button>
+                            
+                            {canBeResumed(summary.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResumeProcessing(summary.id, summary.youtube_url, summary.is_playlist || false)}
+                                disabled={processingIds.includes(summary.id)}
+                                className="bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-800"
+                              >
+                                {processingIds.includes(summary.id) ? 
+                                  (getLangString('resuming', currentLang) || 'Resuming...') : 
+                                  (getLangString('resume', currentLang) || 'Resume')
+                                }
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
