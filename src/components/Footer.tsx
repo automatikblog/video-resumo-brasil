@@ -1,8 +1,12 @@
 
 import React from 'react';
 import { Separator } from "@/components/ui/separator";
+import { getCurrentLang, getLangString } from '@/services/languageService';
 
 const Footer = () => {
+  const currentLang = getCurrentLang();
+  const currentYear = new Date().getFullYear();
+  
   return (
     <footer className="bg-white border-t border-border/40 py-12 md:py-16">
       <div className="container-width">
@@ -10,7 +14,7 @@ const Footer = () => {
           <div className="md:col-span-1">
             <a href="#" className="text-xl font-bold gradient-text">VideoSumário</a>
             <p className="mt-4 text-muted-foreground">
-              Economize tempo com resumos inteligentes de vídeos do YouTube.
+              {getLangString('footerDescription', currentLang)}
             </p>
             <div className="flex space-x-4 mt-6">
               <a href="#" className="text-muted-foreground hover:text-brand-purple transition-colors">
@@ -32,52 +36,52 @@ const Footer = () => {
           </div>
           
           <div>
-            <h4 className="font-semibold text-lg mb-4">Links Rápidos</h4>
+            <h4 className="font-semibold text-lg mb-4">{getLangString('footerQuickLinks', currentLang)}</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Início</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('home', currentLang)}</a>
               </li>
               <li>
-                <a href="#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">Como Funciona</a>
+                <a href="#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('howItWorks', currentLang)}</a>
               </li>
               <li>
-                <a href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
+                <a href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('features', currentLang)}</a>
               </li>
               <li>
-                <a href="#precos" className="text-muted-foreground hover:text-foreground transition-colors">Preços</a>
+                <a href="#precos" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('pricing', currentLang)}</a>
               </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-semibold text-lg mb-4">Suporte</h4>
+            <h4 className="font-semibold text-lg mb-4">{getLangString('footerSupport', currentLang)}</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+                <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('faq', currentLang)}</a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Ajuda</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('footerHelp', currentLang)}</a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Contato</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('footerContact', currentLang)}</a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Feedback</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('footerFeedback', currentLang)}</a>
               </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-semibold text-lg mb-4">Legal</h4>
+            <h4 className="font-semibold text-lg mb-4">{getLangString('footerLegal', currentLang)}</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Termos de Serviço</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('footerTerms', currentLang)}</a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Política de Privacidade</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('footerPrivacy', currentLang)}</a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Cookies</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">{getLangString('footerCookies', currentLang)}</a>
               </li>
             </ul>
           </div>
@@ -87,10 +91,10 @@ const Footer = () => {
         
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} VideoSumário. Todos os direitos reservados.
+            © {currentYear} VideoSumário. {getLangString('footerRights', currentLang)}
           </p>
           <p className="text-muted-foreground text-sm mt-2 md:mt-0">
-            Feito com ❤️ no Brasil
+            {getLangString('footerMadeWith', currentLang)} ❤️ {getLangString('footerInBrazil', currentLang)}
           </p>
         </div>
       </div>

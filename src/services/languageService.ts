@@ -505,7 +505,6 @@ const translations: Record<string, Record<Language, string>> = {
     'en-US': 'Our',
     'es-ES': 'Nuestras'
   },
-  // Fix the duplicate 'features' key by renaming to 'featuresLabel'
   featuresLabel: {
     'pt-BR': 'Recursos',
     'en-US': 'Features',
@@ -821,6 +820,95 @@ const translations: Record<string, Record<Language, string>> = {
     'pt-BR': 'No momento, nossa ferramenta funciona apenas com vídeos públicos do YouTube. Não é possível processar vídeos privados ou que exijam login para visualização.',
     'en-US': 'At the moment, our tool only works with public YouTube videos. It is not possible to process private videos or videos that require login to view.',
     'es-ES': 'Por el momento, nuestra herramienta solo funciona con videos públicos de YouTube. No es posible procesar videos privados o videos que requieran inicio de sesión para ver.'
+  },
+  
+  // Footer translations
+  footerDescription: {
+    'pt-BR': 'Economize tempo com resumos inteligentes de vídeos do YouTube.',
+    'en-US': 'Save time with smart summaries of YouTube videos.',
+    'es-ES': 'Ahorre tiempo con resúmenes inteligentes de videos de YouTube.'
+  },
+  footerQuickLinks: {
+    'pt-BR': 'Links Rápidos',
+    'en-US': 'Quick Links',
+    'es-ES': 'Enlaces Rápidos'
+  },
+  footerSupport: {
+    'pt-BR': 'Suporte',
+    'en-US': 'Support',
+    'es-ES': 'Soporte'
+  },
+  footerHelp: {
+    'pt-BR': 'Ajuda',
+    'en-US': 'Help',
+    'es-ES': 'Ayuda'
+  },
+  footerContact: {
+    'pt-BR': 'Contato',
+    'en-US': 'Contact',
+    'es-ES': 'Contacto'
+  },
+  footerFeedback: {
+    'pt-BR': 'Feedback',
+    'en-US': 'Feedback',
+    'es-ES': 'Feedback'
+  },
+  footerLegal: {
+    'pt-BR': 'Legal',
+    'en-US': 'Legal',
+    'es-ES': 'Legal'
+  },
+  footerTerms: {
+    'pt-BR': 'Termos de Serviço',
+    'en-US': 'Terms of Service',
+    'es-ES': 'Términos de Servicio'
+  },
+  footerPrivacy: {
+    'pt-BR': 'Política de Privacidade',
+    'en-US': 'Privacy Policy',
+    'es-ES': 'Política de Privacidad'
+  },
+  footerCookies: {
+    'pt-BR': 'Cookies',
+    'en-US': 'Cookies',
+    'es-ES': 'Cookies'
+  },
+  footerRights: {
+    'pt-BR': 'Todos os direitos reservados.',
+    'en-US': 'All rights reserved.',
+    'es-ES': 'Todos los derechos reservados.'
+  },
+  footerMadeWith: {
+    'pt-BR': 'Feito com',
+    'en-US': 'Made with',
+    'es-ES': 'Hecho con'
+  },
+  footerInBrazil: {
+    'pt-BR': 'no Brasil',
+    'en-US': 'in Brazil',
+    'es-ES': 'en Brasil'
+  },
+  
+  // Export Transcript button
+  exportTranscript: {
+    'pt-BR': 'Exportar Transcrição',
+    'en-US': 'Export Transcript',
+    'es-ES': 'Exportar Transcripción'
+  },
+  exportingTranscript: {
+    'pt-BR': 'Exportando...',
+    'en-US': 'Exporting...',
+    'es-ES': 'Exportando...'
+  },
+  exportSuccess: {
+    'pt-BR': 'Transcrição exportada com sucesso!',
+    'en-US': 'Transcript exported successfully!',
+    'es-ES': '¡Transcripción exportada con éxito!'
+  },
+  exportFailed: {
+    'pt-BR': 'Falha ao exportar transcrição',
+    'en-US': 'Failed to export transcript',
+    'es-ES': 'Error al exportar la transcripción'
   }
 };
 

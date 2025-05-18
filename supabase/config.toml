@@ -3,3 +3,6 @@ project_id = "upheowtfrqmyipyqkmbl"
 
 [functions.update-video-summary]
 verify_jwt = false
+
+[functions.export-transcript]
+verify_jwt = false
