@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -21,6 +20,7 @@ interface VideoSummary {
   created_at: string;
   updated_at: string;
   error_message?: string;
+  is_playlist?: boolean; // Add this property to match the server data
 }
 
 const Summary = () => {

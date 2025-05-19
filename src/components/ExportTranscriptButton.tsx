@@ -16,11 +16,12 @@ import { getCurrentLang, getLangString } from '@/services/languageService';
 interface ExportTranscriptButtonProps {
   transcriptId: string;
   className?: string;
+  children?: React.ReactNode; // Add children prop to the interface
 }
 
 type ExportFormat = 'txt' | 'markdown' | 'json' | 'html';
 
-const ExportTranscriptButton = ({ transcriptId, className = '' }: ExportTranscriptButtonProps) => {
+const ExportTranscriptButton = ({ transcriptId, className = '', children }: ExportTranscriptButtonProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const currentLang = getCurrentLang();
 
@@ -80,11 +81,15 @@ const ExportTranscriptButton = ({ transcriptId, className = '' }: ExportTranscri
           className={className}
           disabled={isExporting}
         >
-          <Download className="mr-2 h-4 w-4" />
-          {isExporting ? 
-            getLangString('exportingTranscript', currentLang) : 
-            getLangString('exportTranscript', currentLang)
-          }
+          {children ? children : (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              {isExporting ? 
+                getLangString('exportingTranscript', currentLang) : 
+                getLangString('exportTranscript', currentLang)
+              }
+            </>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
