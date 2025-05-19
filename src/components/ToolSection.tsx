@@ -1,7 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { saveYouTubeUrl, pollForVideoSummary } from '@/services/supabaseService';
@@ -9,6 +7,12 @@ import { getFingerprint, checkAnonymousUserLimit } from '@/services/fingerprintS
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getCurrentLang, getLangString } from '@/services/languageService';
+import { isPlaylistUrl } from '@/utils/youtubeUtils';
+import YoutubeUrlForm from './tool-section/YoutubeUrlForm';
+import ProcessingIndicator from './tool-section/ProcessingIndicator';
+import UsageLimitNotice from './tool-section/UsageLimitNotice';
+import ErrorDisplay from './tool-section/ErrorDisplay';
+import SummaryDisplay from './tool-section/SummaryDisplay';
 
 const ToolSection = () => {
   const [url, setUrl] = useState('');
@@ -43,15 +47,6 @@ const ToolSection = () => {
 
     initFingerprint();
   }, [user, currentLang]);
-
-  const isValidYouTubeUrl = (url: string) => {
-    const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
-    return regex.test(url);
-  };
-
-  const isPlaylistUrl = (url: string) => {
-    return url.includes('playlist?list=') || url.includes('&list=');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,8 +107,10 @@ const ToolSection = () => {
     }
   };
 
-  const handleSignIn = () => {
-    navigate('/auth');
+  // Helper function to validate YouTube URL
+  const isValidYouTubeUrl = (url: string) => {
+    const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+    return regex.test(url);
   };
 
   return (
@@ -130,77 +127,19 @@ const ToolSection = () => {
 
         <Card className="shadow-lg border-border/50 max-w-3xl mx-auto">
           <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    placeholder={getLangString('pasteYouTubeUrl', currentLang)}
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    className="w-full h-12 text-base"
-                    disabled={isLoading || (!user && !canUse)}
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity h-12"
-                  disabled={isLoading || (!user && !canUse)}
-                >
-                  {isLoading ? getLangString('processingVideo', currentLang) : getLangString('summarizeVideo', currentLang)}
-                </Button>
-              </div>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
-                <p>
-                  {getLangString('automaticDetection', currentLang) || 'Our system automatically detects video and playlist links.'} 
-                  {isPlaylistUrl(url) && (
-                    <span className="font-medium"> {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}</span>
-                  )}
-                </p>
-              </div>
-            </form>
+            <YoutubeUrlForm
+              url={url}
+              setUrl={setUrl}
+              onSubmit={handleSubmit}
+              isLoading={isLoading}
+              canUse={canUse}
+              isAuthenticated={!!user}
+            />
 
-            {!user && !canUse && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
-                <p className="mb-2">{getLangString('usageLimitReachedDetail', currentLang)}</p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleSignIn}
-                  className="bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200"
-                >
-                  {getLangString('signUpForMore', currentLang)}
-                </Button>
-              </div>
-            )}
-
-            {isLoading && (
-              <div className="mt-8 text-center p-8">
-                <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-purple border-r-transparent align-[-0.125em]" role="status">
-                  <span className="sr-only">{getLangString('loading', currentLang)}</span>
-                </div>
-                <p className="mt-4 text-lg text-muted-foreground">
-                  {isPlaylistUrl(url) 
-                    ? getLangString('playlistProcessing', currentLang) 
-                    : getLangString('processingYourVideo', currentLang)}
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <div className="mt-8 bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
-                <p>{error}</p>
-              </div>
-            )}
-
-            {!isLoading && summary && (
-              <div className="mt-8 animate-fade-in">
-                <h3 className="text-xl font-semibold mb-4">{getLangString('videoSummary', currentLang)}</h3>
-                <div className="bg-muted p-6 rounded-lg">
-                  <p className="whitespace-pre-wrap">{summary}</p>
-                </div>
-              </div>
-            )}
+            <UsageLimitNotice isAuthenticated={!!user} canUse={canUse} />
+            <ProcessingIndicator isLoading={isLoading} url={url} />
+            <ErrorDisplay error={error} />
+            <SummaryDisplay summary={summary} isLoading={isLoading} />
           </CardContent>
         </Card>
       </div>
