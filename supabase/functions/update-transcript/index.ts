@@ -7,8 +7,9 @@ const corsHeaders = {
 };
 
 interface UpdateTranscriptRequest {
-  id: string;        // The UUID of the record to update
-  transcript: string; // The transcript text
+  id: string;           // The UUID of the record to update
+  transcript: string;   // The transcript text
+  summary?: string;     // Optional summary text
 }
 
 // Create a Supabase client with the Admin key
@@ -28,7 +29,7 @@ Deno.serve(async (req) => {
     const requestData = await req.json();
     console.log('Received transcript update request:', requestData);
     
-    const { id, transcript } = requestData as UpdateTranscriptRequest;
+    const { id, transcript, summary } = requestData as UpdateTranscriptRequest;
 
     // Validate required fields
     if (!id || !transcript) {
@@ -54,27 +55,44 @@ Deno.serve(async (req) => {
     }
 
     // Log for debugging
-    console.log(`Updating transcript for video [${id}]`);
+    console.log(`Updating content for video [${id}]`);
+
+    // Prepare the update data
+    const updateData: {
+      transcript: string;
+      updated_at: string;
+      status?: string;
+      summary?: string;
+    } = {
+      transcript: transcript,
+      updated_at: new Date().toISOString()
+    };
+
+    // Add summary if provided
+    if (summary) {
+      updateData.summary = summary;
+      updateData.status = 'completed'; // Mark as completed if summary is provided
+    }
 
     // Update the video transcript in the database
     const { error } = await supabase
       .from('video_summaries')
-      .update({
-        transcript: transcript,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (error) {
-      console.error('Error updating transcript:', error);
+      console.error('Error updating content:', error);
       return new Response(
-        JSON.stringify({ error: 'Failed to update transcript', details: error }), 
+        JSON.stringify({ error: 'Failed to update content', details: error }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Transcript updated successfully' }), 
+      JSON.stringify({ 
+        success: true, 
+        message: summary ? 'Transcript and summary updated successfully' : 'Transcript updated successfully'
+      }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

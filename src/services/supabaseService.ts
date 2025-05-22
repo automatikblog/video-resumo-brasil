@@ -54,8 +54,8 @@ export const saveYouTubeUrl = async (
 
     console.log('Video summary record created:', data);
 
-    // Call the webhook to process the video
-    await triggerSummaryGeneration(data.id, url);
+    // Process the video directly
+    await processVideoDirectly(data.id, url);
 
     // Type assertion to ensure the status is one of the expected values
     return {
@@ -69,37 +69,61 @@ export const saveYouTubeUrl = async (
 };
 
 /**
- * Triggers the external webhook to generate a summary for the video
+ * Processes a video directly using cloud services
  */
-const triggerSummaryGeneration = async (id: string, url: string): Promise<void> => {
+const processVideoDirectly = async (id: string, url: string): Promise<void> => {
   try {
-    console.log('Triggering summary generation for:', { id, url });
+    console.log('Processing video directly:', { id, url });
     
-    const response = await fetch('https://webhooks.automatiklabs.com/webhook/resume-video', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        id,  // The UUID to identify this record
-        youtube_url: url
+    // Update status to processing
+    const { error: updateError } = await supabase
+      .from('video_summaries')
+      .update({ 
+        status: 'processing',
+        updated_at: new Date().toISOString()
       })
-    });
+      .eq('id', id);
 
-    console.log('Webhook response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Webhook returned status ${response.status}:`, errorText);
-      throw new Error(`Webhook returned status ${response.status}: ${errorText}`);
+    if (updateError) {
+      console.error('Error updating video status to processing:', updateError);
     }
 
-    const responseData = await response.json();
-    console.log('Successfully triggered summary generation:', responseData);
+    // Here you would call a cloud service API to transcribe the video
+    // For example:
+    // 1. Extract audio from YouTube
+    // 2. Send to a transcription service
+    // 3. Generate a summary
+    
+    // For now, we'll update with a placeholder to demonstrate the flow
+    // In a real implementation, you would integrate with actual cloud services
+    
+    // Simulate some processing time (would be removed in production)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Mock transcript and summary data (replace with actual API calls)
+    const mockTranscript = `This is a placeholder transcript for the video: ${url}\n\nIt would normally contain the actual transcribed content from the video.`;
+    const mockSummary = `Summary of video ${url}:\n\nThis would normally be a concise summary generated from the transcript.`;
+
+    // Update the record with the transcript and summary
+    await updateVideoTranscript(id, mockTranscript, mockSummary);
+    
+    console.log('Successfully processed video and updated transcript/summary');
   } catch (error) {
-    console.error('Error triggering summary generation:', error);
-    // We're not rethrowing here as we want the UI to continue showing the pending status
-    // The webhook might still process the request despite the error
+    console.error('Error processing video:', error);
+    
+    // Update the status to failed
+    try {
+      await supabase
+        .from('video_summaries')
+        .update({ 
+          status: 'failed', 
+          error_message: error instanceof Error ? error.message : 'Unknown error', 
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+    } catch (updateError) {
+      console.error('Failed to update video status to failed:', updateError);
+    }
   }
 };
 
@@ -124,8 +148,8 @@ export const resumeVideoProcessing = async (id: string, url: string, isPlaylist:
     throw new Error('Failed to update video status');
   }
 
-  // Then trigger the webhook to process it again
-  await triggerSummaryGeneration(id, url);
+  // Process the video directly without using webhook
+  await processVideoDirectly(id, url);
 };
 
 /**
@@ -160,14 +184,18 @@ export const getVideoSummary = async (id: string): Promise<VideoSummary | null> 
 };
 
 /**
- * Updates a video transcript
+ * Updates a video transcript and optionally summary
  */
-export const updateVideoTranscript = async (id: string, transcript: string): Promise<void> => {
+export const updateVideoTranscript = async (
+  id: string, 
+  transcript: string, 
+  summary?: string
+): Promise<void> => {
   console.log('Updating transcript for video:', id);
   
   try {
     const response = await supabase.functions.invoke('update-transcript', {
-      body: { id, transcript }
+      body: { id, transcript, summary }
     });
     
     if (response.error) {
