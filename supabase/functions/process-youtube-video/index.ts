@@ -15,6 +15,14 @@ const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
 // Supadata API Key for transcript retrieval
 const supadataApiKey = Deno.env.get('SUPADATA_API_KEY');
 
+// Log environment variables (safely)
+console.log('Environment check:', {
+  hasYoutubeKey: !!youtubeApiKey,
+  hasOpenAiKey: !!openAiApiKey,
+  hasSupadataKey: !!supadataApiKey,
+  supadataKeyPrefix: supadataApiKey ? supadataApiKey.substring(0, 10) + '...' : 'not set'
+});
+
 // Create a Supabase client with the Admin key
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -52,9 +60,14 @@ async function fetchTranscriptFromSupadata(videoId: string): Promise<string> {
     
     const url = `https://api.supadata.ai/v1/youtube/transcript?url=https://www.youtube.com/watch?v=${videoId}&text=true`;
     
+    console.log(`Making request to: ${url}`);
+    console.log(`Using Supadata API key (first chars): ${supadataApiKey ? supadataApiKey.substring(0, 5) + '...' : 'not set'}`);
+    
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
         'x-api-key': supadataApiKey || '',
+        'Content-Type': 'application/json'
       },
     });
 
@@ -85,9 +98,13 @@ async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<stri
     
     const url = `https://api.supadata.ai/v1/youtube/playlist/videos?id=${playlistId}&limit=20`;
     
+    console.log(`Making request to: ${url}`);
+    
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
         'x-api-key': supadataApiKey || '',
+        'Content-Type': 'application/json'
       },
     });
 
