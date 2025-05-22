@@ -12,6 +12,8 @@ const corsHeaders = {
 const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY');
 // OpenAI API Key for transcription and summarization
 const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+// Supadata API Key for transcript retrieval
+const supadataApiKey = Deno.env.get('SUPADATA_API_KEY');
 
 // Create a Supabase client with the Admin key
 const supabase = createClient(
@@ -31,53 +33,236 @@ function extractYouTubeId(url: string): string | null {
   return (match && match[7].length === 11) ? match[7] : null;
 }
 
-// Fetches captions for a YouTube video
-async function fetchYouTubeCaptions(videoId: string): Promise<string> {
+// Extract YouTube playlist ID from URL
+function extractYouTubePlaylistId(url: string): string | null {
+  const regExp = /^.*(youtu.be\/|list=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2] ? match[2] : null;
+}
+
+// Check if URL is a playlist
+function isPlaylist(url: string): boolean {
+  return url.includes('list=');
+}
+
+// Fetch transcript from Supadata API
+async function fetchTranscriptFromSupadata(videoId: string): Promise<string> {
   try {
-    console.log(`Fetching captions for video ID: ${videoId}`);
+    console.log(`Fetching transcript for video ID: ${videoId} from Supadata API`);
     
-    // Step 1: Get the caption tracks available for the video
-    const captionTracksResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${youtubeApiKey}`
-    );
+    const url = `https://api.supadata.ai/v1/youtube/transcript?url=https://www.youtube.com/watch?v=${videoId}&text=true`;
     
-    if (!captionTracksResponse.ok) {
-      console.error(`Caption tracks API error: ${captionTracksResponse.status} - ${await captionTracksResponse.text()}`);
-      throw new Error('Failed to fetch caption tracks from YouTube API');
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': supadataApiKey || '',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Supadata API error: ${response.status} - ${errorText}`);
+      throw new Error(`Failed to fetch transcript: ${response.status} - ${errorText}`);
     }
+
+    const data = await response.json();
     
-    const captionTracks = await captionTracksResponse.json();
-    console.log(`Caption tracks response:`, captionTracks);
-    
-    // If there are captions available
-    if (captionTracks.items && captionTracks.items.length > 0) {
-      // Try to find English captions first, or use the first available track if no English
-      let captionTrack = captionTracks.items.find((track: any) => 
-        track.snippet.language === 'en' || track.snippet.language === 'en-US'
-      ) || captionTracks.items[0];
-      
-      // Get the caption track ID
-      const captionId = captionTrack.id;
-      console.log(`Using caption track: ${captionId} (${captionTrack.snippet.language})`);
-      
-      // Step 2: Download the actual captions
-      // Note: This would require OAuth 2.0 authentication which is not feasible in this context
-      // Instead, we'll use a workaround to get transcript from video info
-      
-      // Use a third-party service or library that can extract subtitles
-      // For now, let's notify that we found captions but need a different approach to fetch them
-      return `Captions are available for this video (ID: ${captionId}, Language: ${captionTrack.snippet.language}). 
-      However, retrieving the actual caption content requires OAuth 2.0 authentication with the YouTube API, 
-      which isn't implemented in this edge function. A more specialized solution using youtube-transcript-api 
-      or similar libraries would be needed for full caption extraction.`;
-    } else {
-      console.log('No caption tracks found for this video');
-      return 'No captions found for this video. Either the video does not have captions or they are not publicly available.';
+    if (!data.content) {
+      throw new Error('No transcript content returned from Supadata API');
     }
+
+    console.log(`Successfully retrieved transcript for video ID: ${videoId}, language: ${data.lang}`);
+    return data.content;
   } catch (error) {
-    console.error('Error fetching YouTube captions:', error);
-    return `Error fetching captions: ${error instanceof Error ? error.message : String(error)}`;
+    console.error('Error fetching transcript from Supadata:', error);
+    return `Error fetching transcript: ${error instanceof Error ? error.message : String(error)}`;
   }
+}
+
+// Fetch playlist video IDs from Supadata API
+async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<string[]> {
+  try {
+    console.log(`Fetching videos for playlist ID: ${playlistId} from Supadata API`);
+    
+    const url = `https://api.supadata.ai/v1/youtube/playlist/videos?id=${playlistId}&limit=20`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': supadataApiKey || '',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Supadata API error: ${response.status} - ${errorText}`);
+      throw new Error(`Failed to fetch playlist videos: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.videoIds || !data.videoIds.length) {
+      throw new Error('No videos found in playlist');
+    }
+
+    console.log(`Successfully retrieved ${data.videoIds.length} videos from playlist`);
+    return data.videoIds;
+  } catch (error) {
+    console.error('Error fetching playlist videos from Supadata:', error);
+    throw error;
+  }
+}
+
+// Fetches video details from YouTube API
+async function fetchYouTubeVideoDetails(videoId: string) {
+  console.log(`Fetching details for YouTube video: ${videoId}`);
+  const videoDetailsResponse = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${youtubeApiKey}&part=snippet,contentDetails`
+  );
+  
+  if (!videoDetailsResponse.ok) {
+    throw new Error(`YouTube API error: ${await videoDetailsResponse.text()}`);
+  }
+  
+  const videoDetails = await videoDetailsResponse.json();
+  
+  if (!videoDetails.items || videoDetails.items.length === 0) {
+    throw new Error('Video not found on YouTube');
+  }
+  
+  return videoDetails.items[0];
+}
+
+// Process a single video
+async function processSingleVideo(id: string, videoId: string): Promise<{transcript: string, summary: string}> {
+  // 1. Get video details from YouTube API
+  const videoDetails = await fetchYouTubeVideoDetails(videoId);
+  
+  const videoTitle = videoDetails.snippet.title;
+  const videoDescription = videoDetails.snippet.description;
+  const duration = videoDetails.contentDetails.duration;
+  
+  console.log(`Processing video: "${videoTitle}" with duration ${duration}`);
+  
+  // 2. Get transcript from Supadata API
+  const transcript = await fetchTranscriptFromSupadata(videoId);
+  
+  // 3. Generate a summary using GPT-4
+  console.log('Generating summary with OpenAI...');
+  const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system", 
+          content: "You are a summarization assistant. Create a concise but comprehensive summary of the video based on its title, description, and transcript information."
+        },
+        {
+          role: "user",
+          content: `Summarize this YouTube video:\nTitle: "${videoTitle}"\nDescription: "${videoDescription}"\nTranscript: "${transcript.substring(0, 8000)}..."`
+        }
+      ],
+    }),
+  });
+  
+  if (!summaryResponse.ok) {
+    throw new Error(`OpenAI API error for summary: ${await summaryResponse.text()}`);
+  }
+  
+  const summaryData = await summaryResponse.json();
+  const summary = summaryData.choices[0].message.content;
+  
+  console.log('Summary generated');
+  
+  return { transcript, summary };
+}
+
+// Process a playlist
+async function processPlaylist(id: string, playlistId: string, url: string): Promise<{transcript: string, summary: string}> {
+  // 1. Get playlist video IDs
+  const videoIds = await fetchPlaylistVideosFromSupadata(playlistId);
+  
+  console.log(`Processing playlist with ${videoIds.length} videos`);
+  
+  // 2. Get transcripts for all videos
+  let combinedTranscript = `PLAYLIST TRANSCRIPTS FROM: ${url}\n\n`;
+  const videoDetails = [];
+  
+  for (let i = 0; i < videoIds.length; i++) {
+    const videoId = videoIds[i];
+    try {
+      console.log(`Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
+      
+      // Get video details
+      const details = await fetchYouTubeVideoDetails(videoId);
+      videoDetails.push({
+        title: details.snippet.title,
+        description: details.snippet.description
+      });
+      
+      // Get transcript
+      const transcript = await fetchTranscriptFromSupadata(videoId);
+      
+      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ${details.snippet.title} ---\n\n`;
+      combinedTranscript += transcript;
+      
+      // Update database with progress
+      await supabase
+        .from('video_summaries')
+        .update({ 
+          transcript: combinedTranscript,
+          status: 'processing',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+    } catch (error) {
+      console.error(`Error processing video ${videoId}:`, error);
+      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ERROR PROCESSING ---\n\n`;
+      combinedTranscript += `Error: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+  
+  // 3. Generate a summary of the entire playlist
+  console.log('Generating summary for playlist with OpenAI...');
+  
+  // Create a condensed version of the transcript for the summary generation
+  const playlistInfo = videoDetails.map((v, i) => `Video ${i + 1}: "${v.title}" - ${v.description.substring(0, 100)}...`).join('\n');
+  
+  const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system", 
+          content: "You are a summarization assistant. Create a concise but comprehensive summary of the video playlist based on the transcript information from multiple videos."
+        },
+        {
+          role: "user",
+          content: `Summarize this YouTube playlist:\nPlaylist URL: ${url}\nVideos in playlist:\n${playlistInfo}\n\nCombined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
+        }
+      ],
+    }),
+  });
+  
+  if (!summaryResponse.ok) {
+    throw new Error(`OpenAI API error for summary: ${await summaryResponse.text()}`);
+  }
+  
+  const summaryData = await summaryResponse.json();
+  const summary = summaryData.choices[0].message.content;
+  
+  console.log('Playlist summary generated');
+  
+  return { transcript: combinedTranscript, summary };
 }
 
 serve(async (req) => {
@@ -117,107 +302,40 @@ serve(async (req) => {
       );
     }
 
-    // Extract the YouTube video ID
-    const videoId = extractYouTubeId(youtube_url);
+    let videoId: string | null = null;
+    let playlistId: string | null = null;
+    let transcript: string = '';
+    let summary: string = '';
     
-    if (!videoId) {
-      throw new Error('Invalid YouTube URL - could not extract video ID');
-    }
-
-    // 1. Get video details from YouTube API
-    console.log(`Fetching details for YouTube video: ${videoId}`);
-    const videoDetailsResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${youtubeApiKey}&part=snippet,contentDetails`
-    );
-    
-    if (!videoDetailsResponse.ok) {
-      throw new Error(`YouTube API error: ${await videoDetailsResponse.text()}`);
-    }
-    
-    const videoDetails = await videoDetailsResponse.json();
-    
-    if (!videoDetails.items || videoDetails.items.length === 0) {
-      throw new Error('Video not found on YouTube');
-    }
-    
-    const videoTitle = videoDetails.items[0].snippet.title;
-    const videoDescription = videoDetails.items[0].snippet.description;
-    const duration = videoDetails.items[0].contentDetails.duration;
-    
-    console.log(`Processing video: "${videoTitle}" with duration ${duration}`);
-    
-    // 2. Try to fetch transcript from YouTube captions
-    console.log('Attempting to fetch YouTube captions...');
-    const captionText = await fetchYouTubeCaptions(videoId);
-    
-    let transcript = captionText;
-    
-    // If captions weren't available or we couldn't get them, generate simulated transcript with disclaimer
-    if (transcript.includes('Error fetching captions') || transcript.includes('No captions found')) {
-      console.log('Generating transcript with OpenAI as fallback...');
-      // Use OpenAI to generate a transcript simulation based on video details
-      const transcriptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system", 
-              content: "You are a video transcription assistant. The user will provide a YouTube video title and description. You should create a detailed, realistic transcript simulation based on this information. Format it as a full transcript with timestamps, dialog, and descriptions of what might be happening in the video. Make it as realistic as possible, while clearly indicating at the beginning that this is a simulated transcript."
-            },
-            {
-              role: "user",
-              content: `I need a simulated transcript for a YouTube video with the following details:\nTitle: ${videoTitle}\nDescription: ${videoDescription}\nVideo ID: ${videoId}\nDuration: ${duration}\n\nPlease format it like a real transcript with timestamps and dialog, but note that it's simulated.`
-            }
-          ],
-        }),
-      });
-
-      if (!transcriptResponse.ok) {
-        throw new Error(`OpenAI API error: ${await transcriptResponse.text()}`);
+    // Check if it's a playlist or single video
+    if (isPlaylist(youtube_url)) {
+      // Process as playlist
+      playlistId = extractYouTubePlaylistId(youtube_url);
+      
+      if (!playlistId) {
+        throw new Error('Invalid YouTube Playlist URL - could not extract playlist ID');
       }
-
-      const transcriptData = await transcriptResponse.json();
-      transcript = `[SIMULATED TRANSCRIPT - NOT THE ACTUAL VIDEO CONTENT]\n\nThe following is a simulation based on the video title and description, not the actual video content:\n\n${transcriptData.choices[0].message.content}`;
+      
+      console.log(`Processing playlist with ID: ${playlistId}`);
+      const result = await processPlaylist(id, playlistId, youtube_url);
+      transcript = result.transcript;
+      summary = result.summary;
+      
+      // Get the first video ID for reference
+      videoId = extractYouTubeId(youtube_url) || '';
+    } else {
+      // Process as single video
+      videoId = extractYouTubeId(youtube_url);
+      
+      if (!videoId) {
+        throw new Error('Invalid YouTube URL - could not extract video ID');
+      }
+      
+      console.log(`Processing single video with ID: ${videoId}`);
+      const result = await processSingleVideo(id, videoId);
+      transcript = result.transcript;
+      summary = result.summary;
     }
-    
-    console.log('Transcript ready');
-    
-    // 3. Generate a summary using GPT-4
-    console.log('Generating summary with OpenAI...');
-    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system", 
-            content: "You are a summarization assistant. Create a concise but comprehensive summary of the video based on its title, description, and transcript information."
-          },
-          {
-            role: "user",
-            content: `Summarize this YouTube video:\nTitle: "${videoTitle}"\nDescription: "${videoDescription}"\nTranscript: "${transcript.substring(0, 4000)}..."`
-          }
-        ],
-      }),
-    });
-    
-    if (!summaryResponse.ok) {
-      throw new Error(`OpenAI API error for summary: ${await summaryResponse.text()}`);
-    }
-    
-    const summaryData = await summaryResponse.json();
-    const summary = summaryData.choices[0].message.content;
-    
-    console.log('Summary generated');
     
     // 4. Update the database with the transcript and summary
     const { error } = await supabase
@@ -242,7 +360,7 @@ serve(async (req) => {
         success: true, 
         message: 'Video processed successfully',
         videoId,
-        videoTitle
+        videoTitle: playlistId ? 'Playlist' : undefined
       }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

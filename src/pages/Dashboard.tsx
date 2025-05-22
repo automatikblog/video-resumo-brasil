@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import { VideoSummary } from '@/types/videoSummary';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -15,6 +15,9 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const currentLang = getCurrentLang();
+
+  // Check if there are any pending or processing summaries
+  const hasProcessingItems = summaries.some(s => s.status === 'pending' || s.status === 'processing');
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -31,6 +34,7 @@ const Dashboard = () => {
         setSummaries(data);
       } catch (error) {
         console.error('Error fetching summaries:', error);
+        toast.error(getLangString('errorFetchingSummaries', currentLang) || 'Error fetching summaries');
       } finally {
         setIsLoading(false);
       }
@@ -42,13 +46,15 @@ const Dashboard = () => {
       fetchSummaries();
     }
 
-    // Set up auto-refresh every 30 seconds
+    // Set up refresh interval based on processing status
+    // If there are processing items, refresh more frequently (every 5 seconds)
+    // Otherwise, refresh less frequently (every 30 seconds)
     const refreshInterval = setInterval(() => {
       if (user) fetchSummaries();
-    }, 30000);
+    }, hasProcessingItems ? 5000 : 30000);
 
     return () => clearInterval(refreshInterval);
-  }, [user]);
+  }, [user, hasProcessingItems]);
 
   if (loading) {
     return (
