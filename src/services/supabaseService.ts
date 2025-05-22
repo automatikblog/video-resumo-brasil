@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { VideoSummary } from "@/types/videoSummary";
 
@@ -10,6 +11,8 @@ export const saveYouTubeUrl = async (
   fingerprint?: string | null,
   isPlaylist: boolean = false
 ): Promise<VideoSummary> => {
+  console.log('Saving YouTube URL:', { url, userId, fingerprint, isPlaylist });
+  
   const insertData: any = { 
     youtube_url: url,
     is_playlist: isPlaylist
@@ -25,25 +28,36 @@ export const saveYouTubeUrl = async (
     insertData.fingerprint = fingerprint;
   }
 
-  const { data, error } = await supabase
-    .from('video_summaries')
-    .insert([insertData])
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('video_summaries')
+      .insert([insertData])
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Error saving YouTube URL:', error);
-    throw new Error('Failed to save video URL');
+    if (error) {
+      console.error('Error saving YouTube URL:', error);
+      throw new Error(`Failed to save video URL: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('No data returned after inserting video URL');
+    }
+
+    console.log('Video summary record created:', data);
+
+    // Call the webhook to process the video
+    await triggerSummaryGeneration(data.id, url);
+
+    // Type assertion to ensure the status is one of the expected values
+    return {
+      ...data,
+      status: data.status as VideoSummary['status']
+    };
+  } catch (error) {
+    console.error('Failed in saveYouTubeUrl:', error);
+    throw error;
   }
-
-  // Call the webhook to process the video
-  await triggerSummaryGeneration(data.id, url);
-
-  // Type assertion to ensure the status is one of the expected values
-  return {
-    ...data,
-    status: data.status as VideoSummary['status']
-  };
 };
 
 /**
@@ -51,6 +65,8 @@ export const saveYouTubeUrl = async (
  */
 const triggerSummaryGeneration = async (id: string, url: string): Promise<void> => {
   try {
+    console.log('Triggering summary generation for:', { id, url });
+    
     const response = await fetch('https://webhooks.automatiklabs.com/webhook/resume-video', {
       method: 'POST',
       headers: {
@@ -62,14 +78,16 @@ const triggerSummaryGeneration = async (id: string, url: string): Promise<void> 
       })
     });
 
+    console.log('Webhook response status:', response.status);
+
     if (!response.ok) {
-      console.error(`Webhook returned status ${response.status}`);
       const errorText = await response.text();
-      console.error('Webhook error details:', errorText);
+      console.error(`Webhook returned status ${response.status}:`, errorText);
       throw new Error(`Webhook returned status ${response.status}: ${errorText}`);
     }
 
-    console.log('Successfully triggered summary generation');
+    const responseData = await response.json();
+    console.log('Successfully triggered summary generation:', responseData);
   } catch (error) {
     console.error('Error triggering summary generation:', error);
     // We're not rethrowing here as we want the UI to continue showing the pending status
@@ -81,6 +99,8 @@ const triggerSummaryGeneration = async (id: string, url: string): Promise<void> 
  * Resume processing a video or playlist that previously failed
  */
 export const resumeVideoProcessing = async (id: string, url: string, isPlaylist: boolean = false): Promise<void> => {
+  console.log('Resuming video processing:', { id, url, isPlaylist });
+  
   // First update the record status
   const { error: updateError } = await supabase
     .from('video_summaries')
@@ -104,6 +124,8 @@ export const resumeVideoProcessing = async (id: string, url: string, isPlaylist:
  * Gets a video summary by its ID
  */
 export const getVideoSummary = async (id: string): Promise<VideoSummary | null> => {
+  console.log('Fetching video summary:', id);
+  
   const { data, error } = await supabase
     .from('video_summaries')
     .select()
@@ -115,7 +137,12 @@ export const getVideoSummary = async (id: string): Promise<VideoSummary | null> 
     throw new Error('Failed to fetch video summary');
   }
 
-  if (!data) return null;
+  if (!data) {
+    console.log('No video summary found for ID:', id);
+    return null;
+  }
+
+  console.log('Retrieved video summary:', data);
 
   // Type assertion to ensure the status is one of the expected values
   return {
@@ -132,28 +159,36 @@ export const pollForVideoSummary = async (
   maxAttempts: number = 30, 
   intervalMs: number = 3000
 ): Promise<VideoSummary | null> => {
+  console.log(`Starting polling for video summary ${id}. Max attempts: ${maxAttempts}, Interval: ${intervalMs}ms`);
+  
   let attempts = 0;
 
   while (attempts < maxAttempts) {
     const summary = await getVideoSummary(id);
+    attempts++;
+    
+    console.log(`Poll attempt ${attempts}/${maxAttempts}:`, summary?.status);
     
     if (!summary) {
+      console.log('No summary found during polling');
       return null;
     }
 
     if (summary.summary || summary.status === 'completed') {
+      console.log('Summary completed successfully');
       return summary;
     }
 
     if (summary.status === 'failed') {
-      throw new Error('Summary generation failed');
+      console.error('Summary generation failed:', summary.error_message);
+      throw new Error(`Summary generation failed: ${summary.error_message || 'Unknown error'}`);
     }
 
     // Wait for the specified interval
     await new Promise(resolve => setTimeout(resolve, intervalMs));
-    attempts++;
   }
 
+  console.warn(`Timed out waiting for summary after ${maxAttempts} attempts`);
   throw new Error('Timed out waiting for summary');
 };
 
@@ -161,8 +196,13 @@ export const pollForVideoSummary = async (
  * Gets all video summaries for the current user
  */
 export const getUserSummaries = async (userId?: string | null): Promise<VideoSummary[]> => {
-  if (!userId) return [];
+  if (!userId) {
+    console.log('No userId provided to getUserSummaries');
+    return [];
+  }
 
+  console.log('Fetching summaries for user:', userId);
+  
   const { data, error } = await supabase
     .from('video_summaries')
     .select('*')
@@ -174,6 +214,8 @@ export const getUserSummaries = async (userId?: string | null): Promise<VideoSum
     throw new Error('Failed to fetch summaries');
   }
 
+  console.log(`Retrieved ${data.length} summaries for user`);
+  
   return data.map(summary => ({
     ...summary,
     status: summary.status as VideoSummary['status']

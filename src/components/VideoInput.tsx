@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { saveYouTubeUrl } from '@/services/supabaseService';
+import { saveYouTubeUrl, resumeVideoProcessing } from '@/services/supabaseService';
 import { getFingerprint, checkAnonymousUserLimit } from '@/services/fingerprintService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getCurrentLang, getLangString } from '@/services/languageService';
+import { isValidYouTubeUrl, isPlaylistUrl } from '@/utils/youtubeUtils';
 
 const VideoInput = () => {
   const [url, setUrl] = useState('');
@@ -16,6 +17,7 @@ const VideoInput = () => {
   const [error, setError] = useState<string | null>(null);
   const [fingerprint, setFingerprint] = useState<string | null>(null);
   const [canUse, setCanUse] = useState<boolean>(true);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const currentLang = getCurrentLang();
@@ -43,15 +45,6 @@ const VideoInput = () => {
     initFingerprint();
   }, [user, currentLang]);
 
-  const isValidYouTubeUrl = (url: string) => {
-    const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
-    return regex.test(url);
-  };
-
-  const isPlaylistUrl = (url: string) => {
-    return url.includes('playlist?list=') || url.includes('&list=');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -73,16 +66,24 @@ const VideoInput = () => {
 
     setIsLoading(true);
     setError(null);
+    setDebugInfo(null);
 
     try {
       // Automatically detect if the URL is a playlist
-      const isPlaylist = isPlaylistUrl(url);
+      const isPlaylistDetected = isPlaylistUrl(url);
+      
+      // Debug info
+      console.log(`Processing URL: ${url}`, {
+        isPlaylist: isPlaylistDetected,
+        userId: user?.id || 'anonymous',
+        fingerprint: fingerprint || 'unknown'
+      });
       
       // Save the URL to Supabase with correct arguments
-      const record = await saveYouTubeUrl(url, user?.id || null, fingerprint, isPlaylist);
+      const record = await saveYouTubeUrl(url, user?.id || null, fingerprint, isPlaylistDetected);
       
       // Show appropriate message based on content type
-      if (isPlaylist) {
+      if (isPlaylistDetected) {
         toast.success(getLangString('videoSubmitted', currentLang));
         toast.info(getLangString('playlistProcessing', currentLang) || 'Processing playlist. This may take longer than a single video...');
       } else {
@@ -93,7 +94,10 @@ const VideoInput = () => {
       toast.success(getLangString('summaryGenerating', currentLang) || 'Summary generating in the background. Check back soon!');
     } catch (err) {
       console.error('Error in handleSubmit:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      
       setError(getLangString('summaryGenerationFailed', currentLang));
+      setDebugInfo(`Error details: ${errorMessage}`);
       toast.error(getLangString('summaryGenerationError', currentLang));
     } finally {
       setIsLoading(false);
@@ -125,14 +129,14 @@ const VideoInput = () => {
             </Button>
           </div>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
-            <p>
-              {getLangString('automaticDetection', currentLang) || 'Our system automatically detects video and playlist links.'} 
-              {isPlaylistUrl(url) && (
-                <span className="font-medium"> {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}</span>
-              )}
-            </p>
-          </div>
+          {/* This info box should only be shown during development or when debugging */}
+          {process.env.NODE_ENV === 'development' && isPlaylistUrl(url) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
+              <p className="text-sm font-medium">
+                {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}
+              </p>
+            </div>
+          )}
         </form>
 
         {!user && !canUse && (
@@ -164,6 +168,11 @@ const VideoInput = () => {
         {error && (
           <div className="mt-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
             <p>{error}</p>
+            {debugInfo && (
+              <div className="mt-2 p-2 bg-red-100 rounded text-sm font-mono overflow-auto">
+                {debugInfo}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

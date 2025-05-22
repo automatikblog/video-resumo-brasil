@@ -47,14 +47,17 @@ const YoutubeUrlForm = ({
         </Button>
       </div>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
-        <p>
-          {getLangString('automaticDetection', currentLang) || 'Our system automatically detects video and playlist links.'} 
-          {isPlaylistUrl(url) && (
-            <span className="font-medium"> {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}</span>
-          )}
-        </p>
-      </div>
+      {/* Only show this in development mode for debugging */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
+          <p>
+            {getLangString('automaticDetection', currentLang) || 'Our system automatically detects video and playlist links.'} 
+            {isPlaylistUrl(url) && (
+              <span className="font-medium"> {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}</span>
+            )}
+          </p>
+        </div>
+      )}
     </form>
   );
 };
