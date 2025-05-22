@@ -50,7 +50,7 @@ const Dashboard = () => {
     return () => clearInterval(refreshInterval);
   }, [user]);
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-solid border-brand-purple border-r-transparent align-[-0.125em]" role="status">
@@ -66,7 +66,8 @@ const Dashboard = () => {
       <main className="flex-grow container mx-auto px-4 py-8">
         <DashboardContent 
           summaries={summaries} 
-          refreshSummaries={fetchSummaries} 
+          refreshSummaries={fetchSummaries}
+          isLoading={isLoading} 
         />
       </main>
       <Footer />
