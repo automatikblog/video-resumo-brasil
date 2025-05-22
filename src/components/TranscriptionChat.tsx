@@ -56,12 +56,19 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     setIsLoading(true);
     
     try {
+      console.log("Transcript text length:", transcriptionText?.length || 0);
+      
       // Check if we have enough content
       if (!transcriptionText || transcriptionText.trim().length < 10) {
+        console.error('Insufficient transcript content:', transcriptionText);
         throw new Error('Not enough content to analyze');
       }
       
       // Call OpenAI API to process the question
+      console.log("Sending request to OpenAI API with transcript excerpt:", 
+        transcriptionText.substring(0, 100) + "..." + 
+        (transcriptionText.length > 200 ? transcriptionText.substring(transcriptionText.length - 100) : ""));
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -91,6 +98,8 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
 
       if (!response.ok) {
         console.error('API error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('API error details:', errorText);
         throw new Error('API request failed with status: ' + response.status);
       }
 

@@ -183,6 +183,7 @@ const Summary = () => {
                 </TabsTrigger>
               </TabsList>
               
+              {/* Summary Tab */}
               <TabsContent value="summary">
                 <Card className="shadow-lg border-border/50 mb-6">
                   <CardHeader>
@@ -209,6 +210,7 @@ const Summary = () => {
                 </Card>
               </TabsContent>
 
+              {/* Transcript Tab */}
               <TabsContent value="transcript">
                 <Card className="shadow-lg border-border/50 mb-6">
                   <CardHeader>
@@ -235,6 +237,7 @@ const Summary = () => {
                 </Card>
               </TabsContent>
               
+              {/* Chat Tab */}
               <TabsContent value="chat">
                 <Card className="shadow-lg border-border/50">
                   <CardHeader>
@@ -243,14 +246,14 @@ const Summary = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {summaryData?.summary ? (
+                    {summaryData?.transcript ? (
                       <TranscriptionChat
                         transcriptionId={summaryData?.id || ''}
-                        transcriptionText={summaryData?.summary || ''}
+                        transcriptionText={summaryData?.transcript || ''}
                       />
                     ) : (
                       <p className="text-muted-foreground">
-                        {getLangString('chatUnavailable', currentLang) || 'Chat is only available once the summary is generated.'}
+                        {getLangString('chatUnavailable', currentLang) || 'Chat is only available once the transcript is generated.'}
                       </p>
                     )}
                   </CardContent>
