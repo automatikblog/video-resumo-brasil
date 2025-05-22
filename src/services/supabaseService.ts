@@ -13,7 +13,14 @@ export const saveYouTubeUrl = async (
 ): Promise<VideoSummary> => {
   console.log('Saving YouTube URL:', { url, userId, fingerprint, isPlaylist });
   
-  const insertData = { 
+  // Define the insert data as a more flexible type that can accept our conditionally added fields
+  const insertData: {
+    youtube_url: string;
+    is_playlist: boolean;
+    status: string;
+    user_id?: string;
+    fingerprint?: string;
+  } = { 
     youtube_url: url,
     is_playlist: isPlaylist,
     status: 'pending'
