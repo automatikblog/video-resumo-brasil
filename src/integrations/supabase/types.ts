@@ -69,6 +69,7 @@ export type Database = {
           is_playlist: boolean | null
           status: string
           summary: string | null
+          transcript: string | null
           updated_at: string
           user_id: string | null
           video_id: string | null
@@ -82,6 +83,7 @@ export type Database = {
           is_playlist?: boolean | null
           status?: string
           summary?: string | null
+          transcript?: string | null
           updated_at?: string
           user_id?: string | null
           video_id?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           is_playlist?: boolean | null
           status?: string
           summary?: string | null
+          transcript?: string | null
           updated_at?: string
           user_id?: string | null
           video_id?: string | null

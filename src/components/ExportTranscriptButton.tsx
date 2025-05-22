@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentLang, getLangString } from '@/services/languageService';
 

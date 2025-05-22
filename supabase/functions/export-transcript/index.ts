@@ -73,10 +73,14 @@ serve(async (req) => {
 
     let result;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
     // Use transcript if requested and available, otherwise fall back to summary
     const content = contentType === 'transcript' && transcriptData.transcript 
       ? transcriptData.transcript 
-      : transcriptData.summary || "";
+      : contentType === 'summary' && transcriptData.summary
+        ? transcriptData.summary
+        : "No content available";
+    
     const youtubeUrl = transcriptData.youtube_url || "";
     const createdAt = new Date(transcriptData.created_at).toLocaleDateString();
     const contentTypeLabel = contentType === 'transcript' ? 'Transcript' : 'Summary';

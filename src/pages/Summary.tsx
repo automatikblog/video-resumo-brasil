@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import ExportTranscriptButton from '@/components/ExportTranscriptButton';
 import { MessageCircle, ArrowLeft, FileText, Download, FileSpreadsheet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VideoSummary } from '@/types/videoSummary';
 
 interface VideoSummary {
   id: string;
@@ -167,13 +167,13 @@ const Summary = () => {
                   </a>
                 </div>
                 
-                {summaryData.summary && (
+                {(summaryData.summary || summaryData.transcript) && (
                   <div className="mt-6">
                     <ExportTranscriptButton 
                       transcriptId={summaryData.id} 
                       className="w-full"
                     >
-                      <Download className="h-4 w-4 mr-2" /> {getLangString('exportTranscript', currentLang) || 'Export Transcript'}
+                      <Download className="h-4 w-4 mr-2" /> {getLangString('exportTranscript', currentLang) || 'Export Content'}
                     </ExportTranscriptButton>
                   </div>
                 )}
@@ -236,7 +236,7 @@ const Summary = () => {
                   </CardHeader>
                   <CardContent>
                     {summaryData?.transcript ? (
-                      <div className="prose max-w-none">
+                      <div className="prose max-w-none max-h-[500px] overflow-y-auto">
                         <div className="whitespace-pre-wrap">{summaryData.transcript}</div>
                       </div>
                     ) : (
