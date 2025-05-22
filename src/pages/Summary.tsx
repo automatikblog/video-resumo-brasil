@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -8,7 +9,7 @@ import { getCurrentLang, getLangString } from '@/services/languageService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import ExportTranscriptButton from '@/components/ExportTranscriptButton';
-import { MessageCircle, ArrowLeft, FileText, Download } from 'lucide-react';
+import { MessageCircle, ArrowLeft, FileText, Download, FileSpreadsheet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface VideoSummary {
@@ -16,11 +17,12 @@ interface VideoSummary {
   youtube_url: string;
   video_id?: string;
   summary?: string;
+  transcript?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;
   error_message?: string;
-  is_playlist?: boolean; // Add this property to match the server data
+  is_playlist?: boolean;
 }
 
 const Summary = () => {
@@ -179,12 +181,15 @@ const Summary = () => {
             </Card>
           </div>
 
-          {/* Summary & Chat Section */}
+          {/* Summary, Transcript & Chat Section */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-2 mb-4">
+              <TabsList className="grid grid-cols-3 mb-4">
                 <TabsTrigger value="summary" className="flex items-center">
                   <FileText className="mr-2 h-4 w-4" /> {getLangString('summary', currentLang) || 'Summary'}
+                </TabsTrigger>
+                <TabsTrigger value="transcript" className="flex items-center">
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> {getLangString('transcript', currentLang) || 'Transcript'}
                 </TabsTrigger>
                 <TabsTrigger value="chat" className="flex items-center">
                   <MessageCircle className="mr-2 h-4 w-4" /> {getLangString('chat', currentLang) || 'Chat'}
@@ -211,6 +216,32 @@ const Summary = () => {
                     ) : (
                       <p className="text-muted-foreground">
                         {getLangString('noSummaryAvailable', currentLang) || 'No summary available for this video.'}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="transcript">
+                <Card className="shadow-lg border-border/50 mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-bold gradient-text">
+                      {getLangString('videoTranscript', currentLang) || 'Full Transcript'}
+                    </CardTitle>
+                    {summaryData.status !== 'completed' && (
+                      <CardDescription>
+                        {getStatusMessage(summaryData.status, summaryData.error_message)}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {summaryData?.transcript ? (
+                      <div className="prose max-w-none">
+                        <div className="whitespace-pre-wrap">{summaryData.transcript}</div>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        {getLangString('noTranscriptAvailable', currentLang) || 'No transcript available for this video.'}
                       </p>
                     )}
                   </CardContent>

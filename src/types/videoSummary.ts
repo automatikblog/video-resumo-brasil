@@ -4,6 +4,7 @@ export interface VideoSummary {
   youtube_url: string;
   video_id?: string;
   summary?: string;
+  transcript?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;

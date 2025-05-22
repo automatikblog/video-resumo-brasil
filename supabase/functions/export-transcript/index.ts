@@ -22,7 +22,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Parse request body to get transcript ID
-    const { id, format } = await req.json();
+    const { id, format, contentType } = await req.json();
 
     if (!id) {
       return new Response(
@@ -37,7 +37,7 @@ serve(async (req) => {
     // Fetch the transcript data from the database
     const { data: transcriptData, error: fetchError } = await supabase
       .from('video_summaries')
-      .select('summary, youtube_url, video_id, created_at')
+      .select('summary, transcript, youtube_url, video_id, created_at')
       .eq('id', id)
       .single();
 
@@ -73,16 +73,20 @@ serve(async (req) => {
 
     let result;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const summary = transcriptData.summary || "";
+    // Use transcript if requested and available, otherwise fall back to summary
+    const content = contentType === 'transcript' && transcriptData.transcript 
+      ? transcriptData.transcript 
+      : transcriptData.summary || "";
     const youtubeUrl = transcriptData.youtube_url || "";
     const createdAt = new Date(transcriptData.created_at).toLocaleDateString();
+    const contentTypeLabel = contentType === 'transcript' ? 'Transcript' : 'Summary';
 
     // Create content based on requested format
     switch (format) {
       case 'txt':
         result = {
-          content: `${videoTitle}\n\nURL: ${youtubeUrl}\nTranscript Date: ${createdAt}\n\n${summary}`,
-          fileName: `transcript-${timestamp}.txt`,
+          content: `${videoTitle}\n\nURL: ${youtubeUrl}\n${contentTypeLabel} Date: ${createdAt}\n\n${content}`,
+          fileName: `${contentType}-${timestamp}.txt`,
           contentType: 'text/plain'
         };
         break;
@@ -90,8 +94,8 @@ serve(async (req) => {
       case 'markdown':
       case 'md':
         result = {
-          content: `# ${videoTitle}\n\n**URL:** ${youtubeUrl}\n**Transcript Date:** ${createdAt}\n\n${summary}`,
-          fileName: `transcript-${timestamp}.md`,
+          content: `# ${videoTitle}\n\n**URL:** ${youtubeUrl}\n**${contentTypeLabel} Date:** ${createdAt}\n\n${content}`,
+          fileName: `${contentType}-${timestamp}.md`,
           contentType: 'text/markdown'
         };
         break;
@@ -102,9 +106,10 @@ serve(async (req) => {
             title: videoTitle,
             url: youtubeUrl,
             created_at: createdAt,
-            transcript: summary
+            contentType: contentTypeLabel.toLowerCase(),
+            content: content
           }, null, 2),
-          fileName: `transcript-${timestamp}.json`,
+          fileName: `${contentType}-${timestamp}.json`,
           contentType: 'application/json'
         };
         break;
@@ -114,34 +119,34 @@ serve(async (req) => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>${videoTitle}</title>
+  <title>${videoTitle} - ${contentTypeLabel}</title>
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; max-width: 800px; margin: 0 auto; }
     h1 { color: #333; }
     .meta { color: #666; margin-bottom: 20px; }
-    .transcript { white-space: pre-wrap; }
+    .content { white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <h1>${videoTitle}</h1>
   <div class="meta">
     <p><strong>URL:</strong> <a href="${youtubeUrl}">${youtubeUrl}</a></p>
-    <p><strong>Transcript Date:</strong> ${createdAt}</p>
+    <p><strong>${contentTypeLabel} Date:</strong> ${createdAt}</p>
   </div>
-  <div class="transcript">${summary}</div>
+  <div class="content">${content}</div>
 </body>
 </html>`;
         result = {
           content: htmlContent,
-          fileName: `transcript-${timestamp}.html`,
+          fileName: `${contentType}-${timestamp}.html`,
           contentType: 'text/html'
         };
         break;
       
       default:
         result = {
-          content: `${videoTitle}\n\nURL: ${youtubeUrl}\nTranscript Date: ${createdAt}\n\n${summary}`,
-          fileName: `transcript-${timestamp}.txt`,
+          content: `${videoTitle}\n\nURL: ${youtubeUrl}\n${contentTypeLabel} Date: ${createdAt}\n\n${content}`,
+          fileName: `${contentType}-${timestamp}.txt`,
           contentType: 'text/plain'
         };
     }

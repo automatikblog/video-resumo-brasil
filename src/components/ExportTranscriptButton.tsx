@@ -5,7 +5,9 @@ import {
   DropdownMenu, 
   DropdownMenuTrigger, 
   DropdownMenuContent, 
-  DropdownMenuItem 
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -16,21 +18,22 @@ import { getCurrentLang, getLangString } from '@/services/languageService';
 interface ExportTranscriptButtonProps {
   transcriptId: string;
   className?: string;
-  children?: React.ReactNode; // Add children prop to the interface
+  children?: React.ReactNode;
 }
 
 type ExportFormat = 'txt' | 'markdown' | 'json' | 'html';
+type ContentType = 'summary' | 'transcript';
 
 const ExportTranscriptButton = ({ transcriptId, className = '', children }: ExportTranscriptButtonProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const currentLang = getCurrentLang();
 
-  const exportTranscript = async (format: ExportFormat) => {
+  const exportContent = async (format: ExportFormat, contentType: ContentType) => {
     setIsExporting(true);
     
     try {
       const response = await supabase.functions.invoke('export-transcript', {
-        body: { id: transcriptId, format },
+        body: { id: transcriptId, format, contentType },
       });
       
       if (response.error) {
@@ -40,7 +43,7 @@ const ExportTranscriptButton = ({ transcriptId, className = '', children }: Expo
       const data = response.data;
       
       if (!data || data.error) {
-        throw new Error(data?.error || 'Failed to export transcript');
+        throw new Error(data?.error || 'Failed to export content');
       }
       
       // Create a download link
@@ -61,7 +64,7 @@ const ExportTranscriptButton = ({ transcriptId, className = '', children }: Expo
         variant: "default",
       });
     } catch (error) {
-      console.error('Error exporting transcript:', error);
+      console.error('Error exporting content:', error);
       toast({
         title: getLangString('exportFailed', currentLang),
         description: error instanceof Error ? error.message : String(error),
@@ -85,24 +88,41 @@ const ExportTranscriptButton = ({ transcriptId, className = '', children }: Expo
             <>
               <Download className="mr-2 h-4 w-4" />
               {isExporting ? 
-                getLangString('exportingTranscript', currentLang) : 
-                getLangString('exportTranscript', currentLang)
+                getLangString('exporting', currentLang) : 
+                getLangString('export', currentLang)
               }
             </>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => exportTranscript('txt')}>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Export Summary</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => exportContent('txt', 'summary')}>
           Text (.txt)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportTranscript('markdown')}>
+        <DropdownMenuItem onClick={() => exportContent('markdown', 'summary')}>
           Markdown (.md)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportTranscript('json')}>
+        <DropdownMenuItem onClick={() => exportContent('json', 'summary')}>
           JSON (.json)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportTranscript('html')}>
+        <DropdownMenuItem onClick={() => exportContent('html', 'summary')}>
+          HTML (.html)
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuLabel>Export Full Transcript</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => exportContent('txt', 'transcript')}>
+          Text (.txt)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportContent('markdown', 'transcript')}>
+          Markdown (.md)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportContent('json', 'transcript')}>
+          JSON (.json)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportContent('html', 'transcript')}>
           HTML (.html)
         </DropdownMenuItem>
       </DropdownMenuContent>
