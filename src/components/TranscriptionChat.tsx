@@ -36,6 +36,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const currentLang = getCurrentLang();
   
   // API key for OpenAI - this should be stored in Supabase secrets in production
@@ -54,6 +55,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setErrorDetails(null); // Clear any previous error details
     
     try {
       console.log("Transcript text length:", transcriptionText?.length || 0);
@@ -70,6 +72,8 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         (transcriptionText.length > 200 ? transcriptionText.substring(transcriptionText.length - 100) : "");
       
       console.log("Sending request to OpenAI API with transcript excerpt:", transcriptExcerpt);
+      console.log("Using API key (first 10 chars):", openAiApiKey.substring(0, 10) + "...");
+      console.log("Using model: gpt-4o-mini");
       
       // Call OpenAI API to process the question
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -103,20 +107,32 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         }),
       });
 
+      // Log detailed response information for debugging
+      console.log("OpenAI API response status:", response.status);
+      console.log("OpenAI API response status text:", response.statusText);
+      
+      const responseText = await response.text();
+      console.log("OpenAI API response body (first 200 chars):", responseText.substring(0, 200) + (responseText.length > 200 ? "..." : ""));
+      
       if (!response.ok) {
         console.error('API error:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('API error details:', errorText);
-        throw new Error('API request failed with status: ' + response.status);
+        throw new Error(`API request failed with status: ${response.status}. Response: ${responseText.substring(0, 100)}...`);
       }
 
-      const data = await response.json();
-      console.log('API response:', data);
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing JSON response:', parseError);
+        throw new Error(`Error parsing API response: ${parseError.message}. Raw response: ${responseText.substring(0, 100)}...`);
+      }
+      
+      console.log('API parsed response:', data);
       
       // Check if the response has the expected structure
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         console.error('Invalid API response structure:', data);
-        throw new Error('Invalid API response structure');
+        throw new Error(`Invalid API response structure: ${JSON.stringify(data).substring(0, 100)}...`);
       }
       
       const aiResponse = data.choices[0].message.content || 
@@ -132,12 +148,19 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error calling AI API:', error);
-      toast.error(getLangString('errorProcessingRequest', currentLang));
+      
+      // Set detailed error information
+      setErrorDetails(`${error.message || 'Unknown error'}. Please check the console for more details.`);
+      
+      toast.error(
+        errorDetails || getLangString('errorProcessingRequest', currentLang),
+        { duration: 5000 }
+      );
       
       const errorMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: getLangString('errorProcessingRequest', currentLang),
+        content: `${getLangString('errorProcessingRequest', currentLang)}\n\nTechnical details: ${error.message || 'Unknown error'}`,
         timestamp: new Date(),
       };
       
@@ -154,12 +177,26 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     }
   };
 
+  // Debug display at the top of the component
+  const debugInfo = (
+    <div className="mb-2 text-xs text-gray-500 p-2 bg-gray-100 rounded-md">
+      <div><strong>Transcript ID:</strong> {transcriptionId}</div>
+      <div><strong>Transcript Length:</strong> {transcriptionText?.length || 0} chars</div>
+      <div><strong>API Key present:</strong> {openAiApiKey ? 'Yes (length: ' + openAiApiKey.length + ')' : 'No'}</div>
+      <div><strong>Messages count:</strong> {messages.length}</div>
+      {errorDetails && <div className="text-red-500 mt-1"><strong>Last Error:</strong> {errorDetails}</div>}
+    </div>
+  );
+
   return (
     <Card className="mt-8 shadow-lg">
       <CardHeader className="bg-gradient-to-r from-brand-purple to-brand-blue text-white rounded-t-lg">
         <CardTitle>{getLangString('chatWithTranscription', currentLang)}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
+        {/* Debug information - Remove this in production */}
+        {debugInfo}
+        
         <ScrollArea className="h-[400px] p-4">
           <div className="space-y-4">
             {messages.map((message) => (
