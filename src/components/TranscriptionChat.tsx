@@ -38,7 +38,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
   const [isLoading, setIsLoading] = useState(false);
   const currentLang = getCurrentLang();
   
-  // API key for OpenAI
+  // API key for OpenAI - this should be stored in Supabase secrets in production
   const openAiApiKey = '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';
 
   const handleSendMessage = async () => {
@@ -64,11 +64,14 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         throw new Error('Not enough content to analyze');
       }
       
-      // Call OpenAI API to process the question
-      console.log("Sending request to OpenAI API with transcript excerpt:", 
+      // Prepare a shorter transcript excerpt for logging
+      const transcriptExcerpt = 
         transcriptionText.substring(0, 100) + "..." + 
-        (transcriptionText.length > 200 ? transcriptionText.substring(transcriptionText.length - 100) : ""));
+        (transcriptionText.length > 200 ? transcriptionText.substring(transcriptionText.length - 100) : "");
       
+      console.log("Sending request to OpenAI API with transcript excerpt:", transcriptExcerpt);
+      
+      // Call OpenAI API to process the question
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -86,6 +89,10 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
               TRANSCRIPTION:
               ${transcriptionText}`
             },
+            ...messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
             {
               role: 'user',
               content: input
