@@ -12,19 +12,6 @@ import { MessageCircle, ArrowLeft, FileText, Download, FileSpreadsheet } from 'l
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoSummary } from '@/types/videoSummary';
 
-interface VideoSummary {
-  id: string;
-  youtube_url: string;
-  video_id?: string;
-  summary?: string;
-  transcript?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  created_at: string;
-  updated_at: string;
-  error_message?: string;
-  is_playlist?: boolean;
-}
-
 const Summary = () => {
   const { id } = useParams<{ id: string }>();
   const [summaryData, setSummaryData] = useState<VideoSummary | null>(null);
