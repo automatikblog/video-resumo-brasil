@@ -63,8 +63,10 @@ export type Database = {
       video_summaries: {
         Row: {
           created_at: string
+          error_message: string | null
           fingerprint: string | null
           id: string
+          is_playlist: boolean | null
           status: string
           summary: string | null
           updated_at: string
@@ -74,8 +76,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          error_message?: string | null
           fingerprint?: string | null
           id?: string
+          is_playlist?: boolean | null
           status?: string
           summary?: string | null
           updated_at?: string
@@ -85,8 +89,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          error_message?: string | null
           fingerprint?: string | null
           id?: string
+          is_playlist?: boolean | null
           status?: string
           summary?: string | null
           updated_at?: string

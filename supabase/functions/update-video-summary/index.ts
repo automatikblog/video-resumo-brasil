@@ -27,8 +27,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { id, summary, status = 'completed', is_playlist = false, error_message } = await req.json() as UpdateSummaryRequest;
+    // Parse the request body and extract needed fields
+    const requestData = await req.json();
+    console.log('Received update request:', requestData);
+    
+    const { id, summary, status = 'completed', is_playlist = false, error_message } = requestData as UpdateSummaryRequest;
 
+    // Validate required fields
     if (!id) {
       return new Response(
         JSON.stringify({ error: 'Missing required field: id' }), 
@@ -59,6 +64,21 @@ Deno.serve(async (req) => {
     // Add error message if provided
     if (error_message) {
       updateData.error_message = error_message;
+    }
+
+    // Verify the record exists before updating
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('video_summaries')
+      .select('id')
+      .eq('id', id)
+      .single();
+      
+    if (fetchError || !existingRecord) {
+      console.error('Record not found or error fetching:', fetchError);
+      return new Response(
+        JSON.stringify({ error: 'Record not found', details: fetchError || 'No record with this ID exists' }), 
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Log for debugging

@@ -13,9 +13,10 @@ export const saveYouTubeUrl = async (
 ): Promise<VideoSummary> => {
   console.log('Saving YouTube URL:', { url, userId, fingerprint, isPlaylist });
   
-  const insertData: any = { 
+  const insertData = { 
     youtube_url: url,
-    is_playlist: isPlaylist
+    is_playlist: isPlaylist,
+    status: 'pending'
   };
   
   // Add user_id if authenticated
