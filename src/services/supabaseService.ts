@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { VideoSummary } from "@/types/videoSummary";
 
@@ -88,26 +87,17 @@ const processVideoDirectly = async (id: string, url: string): Promise<void> => {
       console.error('Error updating video status to processing:', updateError);
     }
 
-    // Here you would call a cloud service API to transcribe the video
-    // For example:
-    // 1. Extract audio from YouTube
-    // 2. Send to a transcription service
-    // 3. Generate a summary
+    // Call our process-youtube-video edge function
+    const response = await supabase.functions.invoke('process-youtube-video', {
+      body: { id, youtube_url: url }
+    });
     
-    // For now, we'll update with a placeholder to demonstrate the flow
-    // In a real implementation, you would integrate with actual cloud services
+    if (response.error) {
+      console.error('Error processing video:', response.error);
+      throw new Error(`Failed to process video: ${response.error.message}`);
+    }
     
-    // Simulate some processing time (would be removed in production)
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock transcript and summary data (replace with actual API calls)
-    const mockTranscript = `This is a placeholder transcript for the video: ${url}\n\nIt would normally contain the actual transcribed content from the video.`;
-    const mockSummary = `Summary of video ${url}:\n\nThis would normally be a concise summary generated from the transcript.`;
-
-    // Update the record with the transcript and summary
-    await updateVideoTranscript(id, mockTranscript, mockSummary);
-    
-    console.log('Successfully processed video and updated transcript/summary');
+    console.log('Successfully processed video:', response.data);
   } catch (error) {
     console.error('Error processing video:', error);
     

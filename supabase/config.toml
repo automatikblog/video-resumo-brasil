@@ -1,8 +1,11 @@
 
-project_id = "upheowtfrqmyipyqkmbl"
+project_id = 'upheowtfrqmyipyqkmbl'
 
-[functions.update-video-summary]
+[functions.update-transcript]
 verify_jwt = false
 
 [functions.export-transcript]
+verify_jwt = false
+
+[functions.process-youtube-video]
 verify_jwt = false
