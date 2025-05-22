@@ -160,6 +160,29 @@ export const getVideoSummary = async (id: string): Promise<VideoSummary | null> 
 };
 
 /**
+ * Updates a video transcript
+ */
+export const updateVideoTranscript = async (id: string, transcript: string): Promise<void> => {
+  console.log('Updating transcript for video:', id);
+  
+  try {
+    const response = await supabase.functions.invoke('update-transcript', {
+      body: { id, transcript }
+    });
+    
+    if (response.error) {
+      console.error('Error updating transcript:', response.error);
+      throw new Error(`Failed to update transcript: ${response.error.message}`);
+    }
+    
+    console.log('Transcript updated successfully');
+  } catch (error) {
+    console.error('Error in updateVideoTranscript:', error);
+    throw error;
+  }
+};
+
+/**
  * Polls for a video summary until it's ready or times out
  */
 export const pollForVideoSummary = async (

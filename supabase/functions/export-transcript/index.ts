@@ -41,10 +41,10 @@ serve(async (req) => {
       .eq('id', id)
       .single();
 
-    if (fetchError || !transcriptData) {
+    if (fetchError) {
       console.error("Error fetching transcript:", fetchError);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch transcript data" }),
+        JSON.stringify({ error: "Failed to fetch transcript data", details: fetchError }),
         { 
           status: 404, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -52,11 +52,11 @@ serve(async (req) => {
       );
     }
 
-    // Get video title from YouTube API
+    // Get video title from YouTube API if possible
     const videoId = transcriptData.video_id;
     const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY');
     
-    let videoTitle = "YouTube Transcript";
+    let videoTitle = "YouTube Content";
     
     if (youtubeApiKey && videoId) {
       try {
@@ -74,12 +74,23 @@ serve(async (req) => {
     let result;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     
-    // Use transcript if requested and available, otherwise fall back to summary
-    const content = contentType === 'transcript' && transcriptData.transcript 
-      ? transcriptData.transcript 
-      : contentType === 'summary' && transcriptData.summary
-        ? transcriptData.summary
-        : "No content available";
+    // Determine the content based on what was requested and what's available
+    let content;
+    if (contentType === 'transcript') {
+      if (transcriptData.transcript) {
+        content = transcriptData.transcript;
+      } else {
+        content = "No transcript available for this video. The transcript may not have been generated or stored correctly.";
+      }
+    } else if (contentType === 'summary') {
+      if (transcriptData.summary) {
+        content = transcriptData.summary;
+      } else {
+        content = "No summary available for this video. The summary may not have been generated or stored correctly.";
+      }
+    } else {
+      content = "No content available";
+    }
     
     const youtubeUrl = transcriptData.youtube_url || "";
     const createdAt = new Date(transcriptData.created_at).toLocaleDateString();
@@ -171,7 +182,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in export-transcript function:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to export transcript" }),
+      JSON.stringify({ error: "Failed to export transcript", details: error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
