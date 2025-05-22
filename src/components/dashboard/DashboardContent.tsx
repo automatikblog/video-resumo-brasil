@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import VideoInput from '@/components/VideoInput';
@@ -18,7 +19,7 @@ const DashboardContent = ({ summaries, refreshSummaries }: DashboardContentProps
       <h1 className="text-3xl font-bold mb-6 gradient-text">{getLangString('dashboard', currentLang) || 'Dashboard'}</h1>
       
       {/* Video Input Component */}
-      <VideoInput />
+      <VideoInput onVideoSubmitted={refreshSummaries} />
       
       <Card className="shadow-lg border-border/50">
         <CardHeader>

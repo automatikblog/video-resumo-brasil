@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,10 +42,10 @@ const Dashboard = () => {
       fetchSummaries();
     }
 
-    // Set up auto-refresh every minute
+    // Set up auto-refresh every 30 seconds
     const refreshInterval = setInterval(() => {
       if (user) fetchSummaries();
-    }, 60000);
+    }, 30000);
 
     return () => clearInterval(refreshInterval);
   }, [user]);

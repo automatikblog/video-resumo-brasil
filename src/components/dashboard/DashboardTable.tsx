@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { resumeVideoProcessing } from '@/services/supabaseService';
@@ -11,6 +12,7 @@ import {
   TableHeader,
   TableRow 
 } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -109,6 +111,24 @@ const DashboardTable = ({ summaries, refreshSummaries }: DashboardTableProps) =>
     return status === 'failed' || status === 'pending';
   };
 
+  // Set up auto-refresh for processing videos
+  React.useEffect(() => {
+    // Check if any videos are processing
+    const hasProcessingVideos = summaries.some(
+      summary => summary.status === 'processing' || summary.status === 'pending'
+    );
+    
+    if (hasProcessingVideos) {
+      // Set up refresh interval while videos are processing
+      const intervalId = setInterval(() => {
+        console.log('Auto-refreshing summaries due to processing videos');
+        refreshSummaries();
+      }, 10000); // Check every 10 seconds
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [summaries, refreshSummaries]);
+
   if (summaries.length === 0) {
     return (
       <div className="text-center py-12">
@@ -158,9 +178,21 @@ const DashboardTable = ({ summaries, refreshSummaries }: DashboardTableProps) =>
                 {formatDate(summary.created_at)}
               </TableCell>
               <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(summary.status)}`}>
-                  {getStatusLabel(summary.status)}
-                </span>
+                <div className="space-y-1">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(summary.status)}`}>
+                    {getStatusLabel(summary.status)}
+                  </span>
+                  
+                  {/* Show progress bar for processing items */}
+                  {(summary.status === 'processing' || processingIds.includes(summary.id)) && (
+                    <Progress 
+                      className="h-1.5 w-full bg-blue-100" 
+                      value={70}
+                      // We don't know the exact progress, so just animate it
+                      style={{animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"}}
+                    />
+                  )}
+                </div>
               </TableCell>
               <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
                 {summary.is_playlist ? 

@@ -4,14 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { saveYouTubeUrl, resumeVideoProcessing } from '@/services/supabaseService';
+import { saveYouTubeUrl } from '@/services/supabaseService';
 import { getFingerprint, checkAnonymousUserLimit } from '@/services/fingerprintService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import { isValidYouTubeUrl, isPlaylistUrl } from '@/utils/youtubeUtils';
 
-const VideoInput = () => {
+interface VideoInputProps {
+  onVideoSubmitted?: () => void; // Callback to refresh the video list
+}
+
+const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +94,14 @@ const VideoInput = () => {
         toast.success(getLangString('videoSubmitted', currentLang));
       }
       
-      // Refresh dashboard without navigation
+      // Clear the URL input
+      setUrl('');
+      
+      // Call the callback to refresh videos in the dashboard
+      if (onVideoSubmitted) {
+        onVideoSubmitted();
+      }
+      
       toast.success(getLangString('summaryGenerating', currentLang) || 'Summary generating in the background. Check back soon!');
     } catch (err) {
       console.error('Error in handleSubmit:', err);
@@ -101,7 +112,6 @@ const VideoInput = () => {
       toast.error(getLangString('summaryGenerationError', currentLang));
     } finally {
       setIsLoading(false);
-      setUrl('');
     }
   };
 

@@ -93,22 +93,19 @@ serve(async (req) => {
     
     const videoTitle = videoDetails.items[0].snippet.title;
     const videoDescription = videoDetails.items[0].snippet.description;
+    const duration = videoDetails.items[0].contentDetails.duration;
     
-    console.log(`Processing video: "${videoTitle}"`);
+    console.log(`Processing video: "${videoTitle}" with duration ${duration}`);
     
-    // 2. Get the transcript using OpenAI's Whisper API via the youtube-dl utility
-    // For this example, we'll use a pre-made transcript since extracting audio requires additional tools
+    // 2. Get transcript from YouTube captions API if available
+    // Note: This is placeholder for future implementation - YouTube API doesn't directly provide transcripts
+    // In a real implementation, you would need to integrate with a service like Google Speech API,
+    // extract audio from the video, or use OpenAI's Whisper API with the actual audio
     
-    // In a production system, you would:
-    // a) Use a service like youtube-dl to extract audio
-    // b) Send the audio file to OpenAI's Whisper API
-    // c) Get the transcript back
-    
-    // For now, we'll directly use the Whisper API with a sample approach
     console.log('Generating transcript with OpenAI...');
     
-    // This simulates the step of getting a transcript. In a real implementation,
-    // you would extract audio and send it to Whisper API
+    // Use OpenAI to generate an accurate transcript simulation based on the video details
+    // This is more honest about the fact that we're not getting the real transcript yet
     const transcriptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -120,11 +117,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system", 
-            content: "You are a video transcription assistant. Based on the video title and description, create a realistic transcript of what the video might contain. Make it detailed with timestamps."
+            content: "You are a video transcription assistant. The user will provide a YouTube video title and description. Acknowledge that you don't have access to the actual video content, but explain to the user how a proper transcript would be obtained (through YouTube's caption API or audio extraction and transcription). DO NOT create a fictional transcript."
           },
           {
             role: "user",
-            content: `Create a transcript for a YouTube video with the following details:\nTitle: ${videoTitle}\nDescription: ${videoDescription}\n\nCreate a realistic transcript with timestamps.`
+            content: `I need a transcript for a YouTube video with the following details:\nTitle: ${videoTitle}\nDescription: ${videoDescription}\nVideo ID: ${videoId}\nPlease acknowledge that you can't access the real transcript, and explain how one would be generated.`
           }
         ],
       }),
@@ -135,9 +132,9 @@ serve(async (req) => {
     }
 
     const transcriptData = await transcriptResponse.json();
-    const transcript = transcriptData.choices[0].message.content;
+    const transcript = `Note: This is a placeholder. To obtain a real transcript, we would need to extract audio from the YouTube video with ID ${videoId} and use a transcription service like OpenAI's Whisper API. The video title is "${videoTitle}" and it appears to have a duration of ${duration}.\n\n${transcriptData.choices[0].message.content}`;
     
-    console.log('Transcript generated successfully');
+    console.log('Information about transcript generation provided');
     
     // 3. Generate a summary using GPT-4
     console.log('Generating summary with OpenAI...');
@@ -152,11 +149,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system", 
-            content: "You are a summarization assistant. Create a concise summary of the transcript with the most important points."
+            content: "You are a summarization assistant. Create a summary of the video based on its title and description. Acknowledge that this is not based on the full transcript since we don't have access to it yet."
           },
           {
             role: "user",
-            content: `Summarize the following transcript of a YouTube video titled "${videoTitle}":\n\n${transcript}`
+            content: `Summarize what you know about this YouTube video:\nTitle: "${videoTitle}"\nDescription: "${videoDescription}"\nPlease acknowledge this is based only on the metadata, not the actual video content.`
           }
         ],
       }),
@@ -167,9 +164,9 @@ serve(async (req) => {
     }
     
     const summaryData = await summaryResponse.json();
-    const summary = summaryData.choices[0].message.content;
+    const summary = `Note: This summary is based only on the video title and description, not the actual content.\n\n${summaryData.choices[0].message.content}`;
     
-    console.log('Summary generated successfully');
+    console.log('Summary generated based on available metadata');
     
     // 4. Update the database with the transcript and summary
     const { error } = await supabase
@@ -187,14 +184,15 @@ serve(async (req) => {
       throw new Error(`Failed to update database: ${error.message}`);
     }
 
-    console.log('Database updated successfully with transcript and summary');
+    console.log('Database updated successfully with transcript information and summary');
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Video processed successfully',
         videoId,
-        videoTitle
+        videoTitle,
+        note: 'This is using simulated transcript data. For real transcripts, additional implementation is required.'
       }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
