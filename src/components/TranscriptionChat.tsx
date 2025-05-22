@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { getCurrentLang, getLangString } from '@/services/languageService';
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: number;
@@ -39,9 +40,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const currentLang = getCurrentLang();
   
-  // API key for OpenAI - this should be stored in Supabase secrets in production
-  const openAiApiKey = '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';
-
+  // We'll fetch the API key from Supabase rather than hardcoding it
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     
@@ -59,6 +58,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     
     try {
       console.log("Transcript text length:", transcriptionText?.length || 0);
+      console.log("First 50 chars of transcript:", transcriptionText?.substring(0, 50));
       
       // Check if we have enough content
       if (!transcriptionText || transcriptionText.trim().length < 10) {
@@ -66,14 +66,33 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         throw new Error('Not enough content to analyze');
       }
       
+      // Fetch the OpenAI API key from Supabase Edge Function
+      // This way we don't expose the API key in the client code
+      const { data: apiKeyData, error: apiKeyError } = await supabase.functions.invoke('get-openai-key', {
+        body: { action: 'fetch' }
+      });
+      
+      if (apiKeyError || !apiKeyData || !apiKeyData.key) {
+        console.error('Error fetching OpenAI API key:', apiKeyError || 'No key returned');
+        throw new Error(`Failed to get API key: ${apiKeyError?.message || 'No key returned'}`);
+      }
+      
+      const openAiApiKey = apiKeyData.key;
+      console.log("Got API key (first 5 chars):", openAiApiKey.substring(0, 5) + "...");
+      
       // Prepare a shorter transcript excerpt for logging
       const transcriptExcerpt = 
         transcriptionText.substring(0, 100) + "..." + 
         (transcriptionText.length > 200 ? transcriptionText.substring(transcriptionText.length - 100) : "");
       
       console.log("Sending request to OpenAI API with transcript excerpt:", transcriptExcerpt);
-      console.log("Using API key (first 10 chars):", openAiApiKey.substring(0, 10) + "...");
       console.log("Using model: gpt-4o-mini");
+      
+      // Prepare message history for context
+      const messageHistory = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
       
       // Call OpenAI API to process the question
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -93,10 +112,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
               TRANSCRIPTION:
               ${transcriptionText}`
             },
-            ...messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
+            ...messageHistory,
             {
               role: 'user',
               content: input
@@ -115,8 +131,9 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       console.log("OpenAI API response body (first 200 chars):", responseText.substring(0, 200) + (responseText.length > 200 ? "..." : ""));
       
       if (!response.ok) {
-        console.error('API error:', response.status, response.statusText);
-        throw new Error(`API request failed with status: ${response.status}. Response: ${responseText.substring(0, 100)}...`);
+        const errorMessage = `API request failed with status: ${response.status}. Response: ${responseText.substring(0, 300)}...`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       let data;
@@ -150,21 +167,22 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       console.error('Error calling AI API:', error);
       
       // Set detailed error information
-      setErrorDetails(`${error.message || 'Unknown error'}. Please check the console for more details.`);
+      const errorMessage = `${error.message || 'Unknown error'}. Please check the console for more details.`;
+      setErrorDetails(errorMessage);
       
       toast.error(
-        errorDetails || getLangString('errorProcessingRequest', currentLang),
+        `Error: ${errorMessage.substring(0, 100)}${errorMessage.length > 100 ? '...' : ''}`, 
         { duration: 5000 }
       );
       
-      const errorMessage: Message = {
+      const errorResponseMessage: Message = {
         id: Date.now() + 1,
         role: 'assistant',
         content: `${getLangString('errorProcessingRequest', currentLang)}\n\nTechnical details: ${error.message || 'Unknown error'}`,
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorResponseMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +200,6 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     <div className="mb-2 text-xs text-gray-500 p-2 bg-gray-100 rounded-md">
       <div><strong>Transcript ID:</strong> {transcriptionId}</div>
       <div><strong>Transcript Length:</strong> {transcriptionText?.length || 0} chars</div>
-      <div><strong>API Key present:</strong> {openAiApiKey ? 'Yes (length: ' + openAiApiKey.length + ')' : 'No'}</div>
       <div><strong>Messages count:</strong> {messages.length}</div>
       {errorDetails && <div className="text-red-500 mt-1"><strong>Last Error:</strong> {errorDetails}</div>}
     </div>
@@ -194,7 +211,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         <CardTitle>{getLangString('chatWithTranscription', currentLang)}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Debug information - Remove this in production */}
+        {/* Debug information */}
         {debugInfo}
         
         <ScrollArea className="h-[400px] p-4">
