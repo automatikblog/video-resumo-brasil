@@ -40,7 +40,6 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const currentLang = getCurrentLang();
   
-  // We'll fetch the API key from Supabase rather than hardcoding it
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     
@@ -54,13 +53,12 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    setErrorDetails(null); // Clear any previous error details
+    setErrorDetails(null);
     
     try {
       console.log("Transcript text length:", transcriptionText?.length || 0);
       console.log("First 50 chars of transcript:", transcriptionText?.substring(0, 50));
       
-      // Check if we have enough content
       if (!transcriptionText || transcriptionText.trim().length < 10) {
         console.error('Insufficient transcript content:', transcriptionText);
         throw new Error('Not enough content to analyze');
@@ -94,15 +92,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       TRANSCRIPTION:
       ${transcriptionText}`;
       
-      // Add the system prompt if there's no conversation history yet
-      if (messageHistory.length === 0) {
-        messageHistory.push({
-          role: 'model',
-          parts: [{ text: systemPrompt }]
-        });
-      }
-      
-      // Add the user's current question
+      // Add the user's current question with system prompt
       messageHistory.push({
         role: 'user',
         parts: [{ 
@@ -124,7 +114,6 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         }
       );
 
-      // Log detailed response information for debugging
       console.log("Gemini API response status:", response.status);
       console.log("Gemini API response status text:", response.statusText);
       
@@ -145,15 +134,19 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         throw new Error(`Error parsing API response: ${parseError.message}. Raw response: ${responseText.substring(0, 100)}...`);
       }
       
-      console.log('API parsed response:', data);
+      console.log('API parsed response structure:', {
+        hasCandidates: !!data.candidates,
+        candidatesLength: data.candidates?.length || 0,
+        firstCandidate: data.candidates?.[0] || null
+      });
       
-      // Extract the response text from Gemini's structure
-      if (!data[0]?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      // Extract the response text from Gemini's structure (corrected path)
+      if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
         console.error('Invalid API response structure:', data);
         throw new Error(`Invalid API response structure: ${JSON.stringify(data).substring(0, 100)}...`);
       }
       
-      const aiResponse = data[0].candidates[0].content.parts[0].text || 
+      const aiResponse = data.candidates[0].content.parts[0].text || 
         getLangString('errorProcessingRequest', currentLang);
 
       const assistantMessage: Message = {
@@ -167,7 +160,6 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     } catch (error) {
       console.error('Error calling AI API:', error);
       
-      // Set detailed error information
       const errorMessage = `${error.message || 'Unknown error'}. Please check the console for more details.`;
       setErrorDetails(errorMessage);
       
