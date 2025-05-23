@@ -9,7 +9,7 @@ import { getFingerprint, checkAnonymousUserLimit } from '@/services/fingerprintS
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getCurrentLang, getLangString } from '@/services/languageService';
-import { isValidYouTubeUrl, isPlaylistUrl } from '@/utils/youtubeUtils';
+import { isValidYouTubeUrl, isPlaylistUrl, isShortsUrl } from '@/utils/youtubeUtils';
 
 interface VideoInputProps {
   onVideoSubmitted?: () => void; // Callback to refresh the video list
@@ -73,12 +73,14 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
     setDebugInfo(null);
 
     try {
-      // Automatically detect if the URL is a playlist
+      // Automatically detect content type
       const isPlaylistDetected = isPlaylistUrl(url);
+      const isShortsDetected = isShortsUrl(url);
       
       // Debug info
       console.log(`Processing URL: ${url}`, {
         isPlaylist: isPlaylistDetected,
+        isShorts: isShortsDetected,
         userId: user?.id || 'anonymous',
         fingerprint: fingerprint || 'unknown'
       });
@@ -90,6 +92,9 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
       if (isPlaylistDetected) {
         toast.success(getLangString('videoSubmitted', currentLang));
         toast.info(getLangString('playlistProcessing', currentLang) || 'Processing playlist. This may take longer than a single video...');
+      } else if (isShortsDetected) {
+        toast.success('YouTube Shorts submitted successfully!');
+        toast.info('Processing Shorts video...');
       } else {
         toast.success(getLangString('videoSubmitted', currentLang));
       }
@@ -107,12 +112,53 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
       console.error('Error in handleSubmit:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       
-      setError(getLangString('summaryGenerationFailed', currentLang));
-      setDebugInfo(`Error details: ${errorMessage}`);
-      toast.error(getLangString('summaryGenerationError', currentLang));
+      let detailedError = getLangString('summaryGenerationFailed', currentLang);
+      let debugDetails = `Error details: ${errorMessage}`;
+      
+      // Parse error message if it's JSON
+      try {
+        const parsedError = JSON.parse(errorMessage);
+        if (parsedError.details) {
+          debugDetails = `API Error: ${parsedError.details}`;
+        }
+        if (parsedError.url) {
+          debugDetails += `\nURL: ${parsedError.url}`;
+        }
+      } catch {
+        // Not JSON, use as is
+      }
+      
+      // Check for specific error types
+      if (errorMessage.includes('transcript')) {
+        detailedError = 'Failed to get transcript from video. The video might not have captions available.';
+      } else if (errorMessage.includes('playlist')) {
+        detailedError = 'Failed to process playlist. Please check if the playlist is public.';
+      } else if (errorMessage.includes('Shorts')) {
+        detailedError = 'Failed to process YouTube Shorts video. Some Shorts may not have transcript data available.';
+      } else if (errorMessage.includes('404')) {
+        detailedError = 'Video not found. Please check if the URL is correct and the video is public.';
+      } else if (errorMessage.includes('403')) {
+        detailedError = 'Access denied. The video might be private or restricted.';
+      }
+      
+      setError(detailedError);
+      setDebugInfo(debugDetails);
+      
+      toast.error(detailedError, { duration: 8000 });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getContentTypeDisplay = () => {
+    if (!url) return '';
+    
+    if (isPlaylistUrl(url)) {
+      return ' (Playlist detected)';
+    } else if (isShortsUrl(url)) {
+      return ' (YouTube Shorts detected)';
+    }
+    return ' (Regular video)';
   };
 
   return (
@@ -129,6 +175,11 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
                 className="w-full h-12 text-base"
                 disabled={isLoading || (!user && !canUse)}
               />
+              {url && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Content type{getContentTypeDisplay()}
+                </p>
+              )}
             </div>
             <Button 
               type="submit" 
@@ -138,15 +189,6 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
               {isLoading ? getLangString('processingVideo', currentLang) : getLangString('summarizeVideo', currentLang)}
             </Button>
           </div>
-          
-          {/* This info box should only be shown during development or when debugging */}
-          {process.env.NODE_ENV === 'development' && isPlaylistUrl(url) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800">
-              <p className="text-sm font-medium">
-                {getLangString('playlistDetected', currentLang) || 'Playlist detected!'}
-              </p>
-            </div>
-          )}
         </form>
 
         {!user && !canUse && (
@@ -170,6 +212,8 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
             <p className="mt-2 text-muted-foreground">
               {isPlaylistUrl(url) 
                 ? getLangString('playlistProcessing', currentLang) 
+                : isShortsUrl(url)
+                ? 'Processing YouTube Shorts...'
                 : getLangString('processingYourVideo', currentLang)}
             </p>
           </div>
@@ -177,11 +221,14 @@ const VideoInput = ({ onVideoSubmitted }: VideoInputProps) => {
 
         {error && (
           <div className="mt-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
-            <p>{error}</p>
+            <p className="font-medium">{error}</p>
             {debugInfo && (
-              <div className="mt-2 p-2 bg-red-100 rounded text-sm font-mono overflow-auto">
-                {debugInfo}
-              </div>
+              <details className="mt-2">
+                <summary className="cursor-pointer text-sm font-medium">Technical Details</summary>
+                <div className="mt-2 p-2 bg-red-100 rounded text-sm font-mono overflow-auto whitespace-pre-wrap">
+                  {debugInfo}
+                </div>
+              </details>
             )}
           </div>
         )}

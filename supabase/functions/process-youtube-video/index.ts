@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0';
@@ -34,11 +33,24 @@ interface ProcessVideoRequest {
   youtube_url: string;  // The YouTube URL
 }
 
-// Extract YouTube video ID from URL
+// Extract YouTube video ID from URL (including Shorts)
 function extractYouTubeId(url: string): string | null {
+  console.log(`Extracting video ID from URL: ${url}`);
+  
+  // Handle Shorts URLs: https://youtube.com/shorts/dQw4w9WgXcQ
+  if (url.includes('/shorts/')) {
+    const match = url.match(/\/shorts\/([^?&/#]+)/);
+    const id = match ? match[1] : null;
+    console.log(`Shorts URL detected, extracted ID: ${id}`);
+    return id;
+  }
+  
+  // Handle regular video URLs
   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
   const match = url.match(regExp);
-  return (match && match[7].length === 11) ? match[7] : null;
+  const id = (match && match[7].length === 11) ? match[7] : null;
+  console.log(`Regular video URL, extracted ID: ${id}`);
+  return id;
 }
 
 // Extract YouTube playlist ID from URL
@@ -53,7 +65,12 @@ function isPlaylist(url: string): boolean {
   return url.includes('list=');
 }
 
-// Fetch transcript from Supadata API
+// Check if URL is a Shorts video
+function isShorts(url: string): boolean {
+  return url.includes('/shorts/');
+}
+
+// Fetch transcript from Supadata API with better error handling
 async function fetchTranscriptFromSupadata(videoId: string): Promise<string> {
   try {
     console.log(`Fetching transcript for video ID: ${videoId} from Supadata API`);
@@ -71,23 +88,55 @@ async function fetchTranscriptFromSupadata(videoId: string): Promise<string> {
       },
     });
 
+    console.log(`Supadata API response status: ${response.status}`);
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Supadata API error: ${response.status} - ${errorText}`);
+      
+      // Try Shorts format if regular format fails
+      if (response.status === 404 || response.status === 400) {
+        console.log('Trying Shorts URL format...');
+        const shortsUrl = `https://api.supadata.ai/v1/youtube/transcript?url=https://youtube.com/shorts/${videoId}&text=true`;
+        
+        const shortsResponse = await fetch(shortsUrl, {
+          method: 'GET',
+          headers: {
+            'x-api-key': supadataApiKey || '',
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        console.log(`Shorts API response status: ${shortsResponse.status}`);
+        
+        if (shortsResponse.ok) {
+          const shortsData = await shortsResponse.json();
+          if (shortsData.content) {
+            console.log(`Successfully retrieved transcript for Shorts video ID: ${videoId}`);
+            return shortsData.content;
+          }
+        } else {
+          const shortsErrorText = await shortsResponse.text();
+          console.error(`Shorts API also failed: ${shortsResponse.status} - ${shortsErrorText}`);
+        }
+      }
+      
       throw new Error(`Failed to fetch transcript: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Supadata API response data keys:', Object.keys(data));
     
     if (!data.content) {
+      console.error('No transcript content in response:', data);
       throw new Error('No transcript content returned from Supadata API');
     }
 
-    console.log(`Successfully retrieved transcript for video ID: ${videoId}, language: ${data.lang}`);
+    console.log(`Successfully retrieved transcript for video ID: ${videoId}, language: ${data.lang}, content length: ${data.content?.length || 0}`);
     return data.content;
   } catch (error) {
     console.error('Error fetching transcript from Supadata:', error);
-    return `Error fetching transcript: ${error instanceof Error ? error.message : String(error)}`;
+    throw new Error(`Error fetching transcript: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -288,14 +337,22 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let requestData: ProcessVideoRequest;
+  
   try {
     // Parse the request body
-    const requestData = await req.json();
-    console.log('Processing video request:', requestData);
+    requestData = await req.json();
+    console.log('Processing video request:', {
+      id: requestData.id,
+      url: requestData.youtube_url,
+      urlType: isPlaylist(requestData.youtube_url) ? 'playlist' : 
+               isShorts(requestData.youtube_url) ? 'shorts' : 'regular'
+    });
     
-    const { id, youtube_url } = requestData as ProcessVideoRequest;
+    const { id, youtube_url } = requestData;
 
     if (!id || !youtube_url) {
+      console.error('Missing required fields:', { id: !!id, youtube_url: !!youtube_url });
       return new Response(
         JSON.stringify({ error: 'Missing required fields: id and youtube_url are required' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -303,6 +360,7 @@ serve(async (req) => {
     }
 
     // Update status to processing
+    console.log(`Updating record ${id} status to processing`);
     const { error: updateError } = await supabase
       .from('video_summaries')
       .update({ 
@@ -341,20 +399,22 @@ serve(async (req) => {
       // Get the first video ID for reference
       videoId = extractYouTubeId(youtube_url) || '';
     } else {
-      // Process as single video
+      // Process as single video (including Shorts)
       videoId = extractYouTubeId(youtube_url);
       
       if (!videoId) {
         throw new Error('Invalid YouTube URL - could not extract video ID');
       }
       
-      console.log(`Processing single video with ID: ${videoId}`);
+      const videoType = isShorts(youtube_url) ? 'Shorts' : 'regular';
+      console.log(`Processing ${videoType} video with ID: ${videoId}`);
       const result = await processSingleVideo(id, videoId);
       transcript = result.transcript;
       summary = result.summary;
     }
     
     // 4. Update the database with the transcript and summary
+    console.log(`Updating database with results for record ${id}`);
     const { error } = await supabase
       .from('video_summaries')
       .update({
@@ -367,6 +427,7 @@ serve(async (req) => {
       .eq('id', id);
 
     if (error) {
+      console.error('Error updating database:', error);
       throw new Error(`Failed to update database: ${error.message}`);
     }
 
@@ -377,7 +438,7 @@ serve(async (req) => {
         success: true, 
         message: 'Video processed successfully',
         videoId,
-        videoTitle: playlistId ? 'Playlist' : undefined
+        videoType: isPlaylist(youtube_url) ? 'playlist' : isShorts(youtube_url) ? 'shorts' : 'video'
       }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -385,20 +446,26 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing video:', error);
     
-    // Try to update the record status to failed
+    // Try to update the record status to failed with detailed error message
     try {
-      const requestData = await req.json().catch(() => ({}));
-      const { id } = requestData as Partial<ProcessVideoRequest>;
-      
-      if (id) {
+      if (requestData?.id) {
+        const detailedError = {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          timestamp: new Date().toISOString(),
+          url: requestData.youtube_url
+        };
+        
+        console.log('Updating record with failure details:', detailedError);
+        
         await supabase
           .from('video_summaries')
           .update({ 
             status: 'failed', 
-            error_message: error instanceof Error ? error.message : 'Unknown error', 
+            error_message: JSON.stringify(detailedError),
             updated_at: new Date().toISOString()
           })
-          .eq('id', id);
+          .eq('id', requestData.id);
       }
     } catch (updateError) {
       console.error('Error updating failure status:', updateError);
@@ -407,7 +474,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to process video', 
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        url: requestData?.youtube_url || 'unknown'
       }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
