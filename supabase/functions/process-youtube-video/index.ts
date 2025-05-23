@@ -10,15 +10,15 @@ const corsHeaders = {
 
 // YouTube API Key for extracting video metadata
 const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY');
-// OpenAI API Key for transcription and summarization
-const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+// Gemini API Key for transcription and summarization
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 // Supadata API Key for transcript retrieval
 const supadataApiKey = Deno.env.get('SUPADATA_API_KEY');
 
 // Log environment variables (safely)
 console.log('Environment check:', {
   hasYoutubeKey: !!youtubeApiKey,
-  hasOpenAiKey: !!openAiApiKey,
+  hasGeminiKey: !!geminiApiKey,
   hasSupadataKey: !!supadataApiKey,
   supadataKeyPrefix: supadataApiKey ? supadataApiKey.substring(0, 10) + '...' : 'not set'
 });
@@ -234,6 +234,57 @@ async function fetchYouTubeVideoDetails(videoId: string) {
   return videoDetails.items[0];
 }
 
+// Generate a summary using Gemini API
+async function generateSummaryWithGemini(title: string, description: string, transcript: string): Promise<string> {
+  console.log('Generating summary with Gemini...');
+  
+  // Truncate transcript if too long (Gemini has input limits)
+  const truncatedTranscript = transcript.length > 8000 ? transcript.substring(0, 8000) + "..." : transcript;
+  
+  const requestBody = {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { 
+            text: `Summarize this YouTube video:
+Title: "${title}"
+Description: "${description}"
+Transcript: "${truncatedTranscript}"`
+          }
+        ]
+      }
+    ]
+  };
+  
+  const summaryResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    }
+  );
+  
+  if (!summaryResponse.ok) {
+    const errorText = await summaryResponse.text();
+    throw new Error(`Gemini API error: ${summaryResponse.status} - ${errorText}`);
+  }
+  
+  const summaryData = await summaryResponse.json();
+  
+  if (!summaryData[0]?.candidates?.[0]?.content?.parts?.[0]?.text) {
+    throw new Error(`Unexpected Gemini API response format: ${JSON.stringify(summaryData)}`);
+  }
+  
+  const summary = summaryData[0].candidates[0].content.parts[0].text;
+  console.log('Summary generated successfully');
+  
+  return summary;
+}
+
 // Process a single video
 async function processSingleVideo(id: string, videoId: string): Promise<{transcript: string, summary: string}> {
   // 1. Get video details from YouTube API
@@ -248,37 +299,8 @@ async function processSingleVideo(id: string, videoId: string): Promise<{transcr
   // 2. Get transcript from Supadata API
   const transcript = await fetchTranscriptFromSupadata(videoId);
   
-  // 3. Generate a summary using GPT-4
-  console.log('Generating summary with OpenAI...');
-  const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system", 
-          content: "You are a summarization assistant. Create a concise but comprehensive summary of the video based on its title, description, and transcript information."
-        },
-        {
-          role: "user",
-          content: `Summarize this YouTube video:\nTitle: "${videoTitle}"\nDescription: "${videoDescription}"\nTranscript: "${transcript.substring(0, 8000)}..."`
-        }
-      ],
-    }),
-  });
-  
-  if (!summaryResponse.ok) {
-    throw new Error(`OpenAI API error for summary: ${await summaryResponse.text()}`);
-  }
-  
-  const summaryData = await summaryResponse.json();
-  const summary = summaryData.choices[0].message.content;
-  
-  console.log('Summary generated');
+  // 3. Generate a summary using Gemini
+  const summary = await generateSummaryWithGemini(videoTitle, videoDescription, transcript);
   
   return { transcript, summary };
 }
@@ -358,42 +380,54 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
     
     console.log(`Playlist processing complete: ${successCount}/${videoIds.length} videos processed successfully`);
     
-    // 3. Generate a summary of the entire playlist
-    console.log('Generating summary for playlist with OpenAI...');
+    // 3. Generate a summary of the entire playlist with Gemini
+    const playlistInfo = videoDetails.map((v, i) => 
+      `Video ${i + 1}: "${v.title}" (ID: ${v.id}) - ${v.description.substring(0, 100)}...`
+    ).join('\n');
     
     // Create a condensed version of the transcript for the summary generation
-    const playlistInfo = videoDetails.map((v, i) => `Video ${i + 1}: "${v.title}" (ID: ${v.id}) - ${v.description.substring(0, 100)}...`).join('\n');
+    const requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { 
+              text: `Summarize this YouTube playlist:
+Playlist URL: ${url}
+Videos in playlist (${videoDetails.length} total):
+${playlistInfo}
+
+Combined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
+            }
+          ]
+        }
+      ]
+    };
     
-    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system", 
-            content: "You are a summarization assistant. Create a concise but comprehensive summary of the video playlist based on the transcript information from multiple videos."
-          },
-          {
-            role: "user",
-            content: `Summarize this YouTube playlist:\nPlaylist URL: ${url}\nVideos in playlist (${videoDetails.length} total):\n${playlistInfo}\n\nCombined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
-          }
-        ],
-      }),
-    });
+    const summaryResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
     
     if (!summaryResponse.ok) {
       const errorText = await summaryResponse.text();
-      console.error(`OpenAI API error for summary: ${summaryResponse.status} - ${errorText}`);
-      throw new Error(`OpenAI API error for summary: ${summaryResponse.status} - ${errorText}`);
+      console.error(`Gemini API error for summary: ${summaryResponse.status} - ${errorText}`);
+      throw new Error(`Gemini API error for summary: ${summaryResponse.status} - ${errorText}`);
     }
     
     const summaryData = await summaryResponse.json();
-    const summary = summaryData.choices[0].message.content;
     
+    if (!summaryData[0]?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error(`Unexpected Gemini API response format: ${JSON.stringify(summaryData)}`);
+    }
+    
+    const summary = summaryData[0].candidates[0].content.parts[0].text;
     console.log('Playlist summary generated successfully');
     
     return { transcript: combinedTranscript, summary };

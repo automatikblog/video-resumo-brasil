@@ -66,69 +66,70 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
         throw new Error('Not enough content to analyze');
       }
       
-      // Fetch the OpenAI API key from Supabase Edge Function
-      // This way we don't expose the API key in the client code
-      const { data: apiKeyData, error: apiKeyError } = await supabase.functions.invoke('get-openai-key', {
+      // Fetch the Gemini API key from Supabase Edge Function
+      const { data: apiKeyData, error: apiKeyError } = await supabase.functions.invoke('get-gemini-key', {
         body: { action: 'fetch' }
       });
       
       if (apiKeyError || !apiKeyData || !apiKeyData.key) {
-        console.error('Error fetching OpenAI API key:', apiKeyError || 'No key returned');
+        console.error('Error fetching Gemini API key:', apiKeyError || 'No key returned');
         throw new Error(`Failed to get API key: ${apiKeyError?.message || 'No key returned'}`);
       }
       
-      const openAiApiKey = apiKeyData.key;
-      console.log("Got API key (first 5 chars):", openAiApiKey.substring(0, 5) + "...");
-      
-      // Prepare a shorter transcript excerpt for logging
-      const transcriptExcerpt = 
-        transcriptionText.substring(0, 100) + "..." + 
-        (transcriptionText.length > 200 ? transcriptionText.substring(transcriptionText.length - 100) : "");
-      
-      console.log("Sending request to OpenAI API with transcript excerpt:", transcriptExcerpt);
-      console.log("Using model: gpt-4o-mini");
+      const geminiApiKey = apiKeyData.key;
+      console.log("Got API key (first 5 chars):", geminiApiKey.substring(0, 5) + "...");
       
       // Prepare message history for context
-      const messageHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      const messageHistory = messages
+        .filter(msg => msg.id !== 1) // Skip the initial greeting
+        .map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        }));
       
-      // Call OpenAI API to process the question
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: `You are an assistant that answers questions based on the following transcription. 
-              Be helpful, concise and provide specific information from the transcription when possible.
-              
-              TRANSCRIPTION:
-              ${transcriptionText}`
-            },
-            ...messageHistory,
-            {
-              role: 'user',
-              content: input
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500,
-        }),
+      // Prepare the system prompt with transcript
+      const systemPrompt = `You are an assistant that answers questions based on the following transcription. 
+      Be helpful, concise and provide specific information from the transcription when possible.
+      
+      TRANSCRIPTION:
+      ${transcriptionText}`;
+      
+      // Add the system prompt if there's no conversation history yet
+      if (messageHistory.length === 0) {
+        messageHistory.push({
+          role: 'model',
+          parts: [{ text: systemPrompt }]
+        });
+      }
+      
+      // Add the user's current question
+      messageHistory.push({
+        role: 'user',
+        parts: [{ 
+          text: `${systemPrompt}\n\nQuestion: ${input}`
+        }]
       });
+      
+      // Call Gemini API to process the question
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: messageHistory
+          }),
+        }
+      );
 
       // Log detailed response information for debugging
-      console.log("OpenAI API response status:", response.status);
-      console.log("OpenAI API response status text:", response.statusText);
+      console.log("Gemini API response status:", response.status);
+      console.log("Gemini API response status text:", response.statusText);
       
       const responseText = await response.text();
-      console.log("OpenAI API response body (first 200 chars):", responseText.substring(0, 200) + (responseText.length > 200 ? "..." : ""));
+      console.log("Gemini API response body (first 200 chars):", responseText.substring(0, 200) + (responseText.length > 200 ? "..." : ""));
       
       if (!response.ok) {
         const errorMessage = `API request failed with status: ${response.status}. Response: ${responseText.substring(0, 300)}...`;
@@ -146,13 +147,13 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       
       console.log('API parsed response:', data);
       
-      // Check if the response has the expected structure
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      // Extract the response text from Gemini's structure
+      if (!data[0]?.candidates?.[0]?.content?.parts?.[0]?.text) {
         console.error('Invalid API response structure:', data);
         throw new Error(`Invalid API response structure: ${JSON.stringify(data).substring(0, 100)}...`);
       }
       
-      const aiResponse = data.choices[0].message.content || 
+      const aiResponse = data[0].candidates[0].content.parts[0].text || 
         getLangString('errorProcessingRequest', currentLang);
 
       const assistantMessage: Message = {
