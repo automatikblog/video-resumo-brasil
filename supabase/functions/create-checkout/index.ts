@@ -1,5 +1,5 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+// No need for XHR module as Stripe doesn't require it
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 
