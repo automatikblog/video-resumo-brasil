@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0';
@@ -147,6 +146,7 @@ async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<stri
     const url = `https://api.supadata.ai/v1/youtube/playlist/videos?id=${playlistId}&limit=20`;
     
     console.log(`Making request to: ${url}`);
+    console.log(`Using API key prefix: ${supadataApiKey ? supadataApiKey.substring(0, 20) + '...' : 'not set'}`);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -157,6 +157,7 @@ async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<stri
     });
 
     console.log(`Supadata playlist API response status: ${response.status}`);
+    console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -165,15 +166,44 @@ async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<stri
     }
 
     const data = await response.json();
-    console.log('Playlist API response data:', data);
+    console.log('Playlist API response data structure:', {
+      hasVideoIds: !!data.videoIds,
+      hasShortIds: !!data.shortIds,
+      hasLiveIds: !!data.liveIds,
+      videoIdsLength: data.videoIds?.length || 0,
+      shortIdsLength: data.shortIds?.length || 0,
+      liveIdsLength: data.liveIds?.length || 0,
+      rawData: data
+    });
     
-    if (!data.videoIds || !Array.isArray(data.videoIds) || data.videoIds.length === 0) {
-      console.error('No videoIds in playlist response:', data);
+    // Collect all video IDs from different arrays
+    const allVideoIds = [];
+    
+    if (data.videoIds && Array.isArray(data.videoIds)) {
+      allVideoIds.push(...data.videoIds);
+      console.log(`Added ${data.videoIds.length} regular video IDs`);
+    }
+    
+    if (data.shortIds && Array.isArray(data.shortIds)) {
+      allVideoIds.push(...data.shortIds);
+      console.log(`Added ${data.shortIds.length} shorts IDs`);
+    }
+    
+    if (data.liveIds && Array.isArray(data.liveIds)) {
+      allVideoIds.push(...data.liveIds);
+      console.log(`Added ${data.liveIds.length} live video IDs`);
+    }
+    
+    // Remove duplicates
+    const uniqueVideoIds = [...new Set(allVideoIds)];
+    
+    if (uniqueVideoIds.length === 0) {
+      console.error('No videos found in playlist response:', data);
       throw new Error('No videos found in playlist or invalid response format');
     }
 
-    console.log(`Successfully retrieved ${data.videoIds.length} videos from playlist:`, data.videoIds);
-    return data.videoIds;
+    console.log(`Successfully retrieved ${uniqueVideoIds.length} unique videos from playlist:`, uniqueVideoIds);
+    return uniqueVideoIds;
   } catch (error) {
     console.error('Error fetching playlist videos from Supadata:', error);
     throw error;
@@ -251,90 +281,110 @@ async function processSingleVideo(id: string, videoId: string): Promise<{transcr
 
 // Process a playlist
 async function processPlaylist(id: string, playlistId: string, url: string): Promise<{transcript: string, summary: string}> {
-  // 1. Get playlist video IDs using the correct Supadata API
-  const videoIds = await fetchPlaylistVideosFromSupadata(playlistId);
-  
-  console.log(`Processing playlist with ${videoIds.length} videos: ${videoIds.join(', ')}`);
-  
-  // 2. Get transcripts for all videos and concatenate them
-  let combinedTranscript = `PLAYLIST TRANSCRIPTS FROM: ${url}\n\n`;
-  const videoDetails = [];
-  
-  for (let i = 0; i < videoIds.length; i++) {
-    const videoId = videoIds[i];
-    try {
-      console.log(`Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
-      
-      // Get video details
-      const details = await fetchYouTubeVideoDetails(videoId);
-      videoDetails.push({
-        id: videoId,
-        title: details.snippet.title,
-        description: details.snippet.description
-      });
-      
-      // Get transcript
-      const transcript = await fetchTranscriptFromSupadata(videoId);
-      
-      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ${details.snippet.title} (ID: ${videoId}) ---\n\n`;
-      combinedTranscript += transcript;
-      
-      console.log(`Successfully processed video ${i + 1}: ${details.snippet.title}`);
-      
-      // Update database with progress
-      await supabase
-        .from('video_summaries')
-        .update({ 
-          transcript: combinedTranscript,
-          status: 'processing',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+  try {
+    console.log(`Starting playlist processing for ID: ${playlistId}`);
+    
+    // 1. Get playlist video IDs using the correct Supadata API
+    const videoIds = await fetchPlaylistVideosFromSupadata(playlistId);
+    
+    console.log(`Processing playlist with ${videoIds.length} videos: ${videoIds.join(', ')}`);
+    
+    // 2. Get transcripts for all videos and concatenate them
+    let combinedTranscript = `PLAYLIST TRANSCRIPTS FROM: ${url}\n\n`;
+    const videoDetails = [];
+    let processedCount = 0;
+    let successCount = 0;
+    
+    for (let i = 0; i < videoIds.length; i++) {
+      const videoId = videoIds[i];
+      try {
+        console.log(`Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
         
-    } catch (error) {
-      console.error(`Error processing video ${videoId}:`, error);
-      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ERROR PROCESSING (ID: ${videoId}) ---\n\n`;
-      combinedTranscript += `Error: ${error instanceof Error ? error.message : String(error)}`;
+        // Get video details
+        const details = await fetchYouTubeVideoDetails(videoId);
+        videoDetails.push({
+          id: videoId,
+          title: details.snippet.title,
+          description: details.snippet.description
+        });
+        
+        // Get transcript
+        const transcript = await fetchTranscriptFromSupadata(videoId);
+        
+        combinedTranscript += `\n\n--- VIDEO ${i + 1}: ${details.snippet.title} (ID: ${videoId}) ---\n\n`;
+        combinedTranscript += transcript;
+        
+        successCount++;
+        console.log(`Successfully processed video ${i + 1}: ${details.snippet.title}`);
+        
+      } catch (error) {
+        console.error(`Error processing video ${videoId}:`, error);
+        combinedTranscript += `\n\n--- VIDEO ${i + 1}: ERROR PROCESSING (ID: ${videoId}) ---\n\n`;
+        combinedTranscript += `Error: ${error instanceof Error ? error.message : String(error)}`;
+      }
+      
+      processedCount++;
+      
+      // Update database with progress every few videos
+      if (processedCount % 3 === 0 || processedCount === videoIds.length) {
+        console.log(`Updating progress: ${processedCount}/${videoIds.length} videos processed (${successCount} successful)`);
+        await supabase
+          .from('video_summaries')
+          .update({ 
+            transcript: combinedTranscript,
+            status: 'processing',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id);
+      }
     }
+    
+    console.log(`Playlist processing complete: ${successCount}/${videoIds.length} videos processed successfully`);
+    
+    // 3. Generate a summary of the entire playlist
+    console.log('Generating summary for playlist with OpenAI...');
+    
+    // Create a condensed version of the transcript for the summary generation
+    const playlistInfo = videoDetails.map((v, i) => `Video ${i + 1}: "${v.title}" (ID: ${v.id}) - ${v.description.substring(0, 100)}...`).join('\n');
+    
+    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system", 
+            content: "You are a summarization assistant. Create a concise but comprehensive summary of the video playlist based on the transcript information from multiple videos."
+          },
+          {
+            role: "user",
+            content: `Summarize this YouTube playlist:\nPlaylist URL: ${url}\nVideos in playlist (${videoDetails.length} total):\n${playlistInfo}\n\nCombined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
+          }
+        ],
+      }),
+    });
+    
+    if (!summaryResponse.ok) {
+      const errorText = await summaryResponse.text();
+      console.error(`OpenAI API error for summary: ${summaryResponse.status} - ${errorText}`);
+      throw new Error(`OpenAI API error for summary: ${summaryResponse.status} - ${errorText}`);
+    }
+    
+    const summaryData = await summaryResponse.json();
+    const summary = summaryData.choices[0].message.content;
+    
+    console.log('Playlist summary generated successfully');
+    
+    return { transcript: combinedTranscript, summary };
+    
+  } catch (error) {
+    console.error('Error in processPlaylist:', error);
+    throw error;
   }
-  
-  // 3. Generate a summary of the entire playlist
-  console.log('Generating summary for playlist with OpenAI...');
-  
-  // Create a condensed version of the transcript for the summary generation
-  const playlistInfo = videoDetails.map((v, i) => `Video ${i + 1}: "${v.title}" (ID: ${v.id}) - ${v.description.substring(0, 100)}...`).join('\n');
-  
-  const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system", 
-          content: "You are a summarization assistant. Create a concise but comprehensive summary of the video playlist based on the transcript information from multiple videos."
-        },
-        {
-          role: "user",
-          content: `Summarize this YouTube playlist:\nPlaylist URL: ${url}\nVideos in playlist (${videoDetails.length} total):\n${playlistInfo}\n\nCombined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
-        }
-      ],
-    }),
-  });
-  
-  if (!summaryResponse.ok) {
-    throw new Error(`OpenAI API error for summary: ${await summaryResponse.text()}`);
-  }
-  
-  const summaryData = await summaryResponse.json();
-  const summary = summaryData.choices[0].message.content;
-  
-  console.log('Playlist summary generated');
-  
-  return { transcript: combinedTranscript, summary };
 }
 
 serve(async (req) => {
