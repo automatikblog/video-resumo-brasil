@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { resumeVideoProcessing } from '@/services/supabaseService';
 import { getCurrentLang, getLangString } from '@/services/languageService';
+import { extractVideoId } from '@/utils/youtubeUtils';
 import { Button } from '@/components/ui/button';
 import { 
   Table,
@@ -67,21 +67,16 @@ const DashboardTable = ({ summaries, refreshSummaries }: DashboardTableProps) =>
     }
   };
 
-  const extractVideoId = (url: string) => {
-    try {
-      if (url.includes('youtu.be/')) {
-        return url.split('youtu.be/')[1].split('?')[0];
-      } else if (url.includes('v=')) {
-        return url.split('v=')[1].split('&')[0];
-      }
-      return null;
-    } catch {
-      return null;
+  const getThumbnailUrl = (summary: VideoSummary) => {
+    // Try to get video ID from the stored video_id field first
+    let videoId = summary.video_id;
+    
+    // If not available, extract from URL
+    if (!videoId) {
+      videoId = extractVideoId(summary.youtube_url);
     }
-  };
-
-  const getThumbnailUrl = (url: string) => {
-    const videoId = extractVideoId(url);
+    
+    // Return thumbnail URL if we have a video ID
     return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   };
 
@@ -154,11 +149,15 @@ const DashboardTable = ({ summaries, refreshSummaries }: DashboardTableProps) =>
             <TableRow key={summary.id} className="cursor-pointer hover:bg-muted/70">
               <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
                 <div className="flex items-center space-x-3">
-                  {getThumbnailUrl(summary.youtube_url) && (
+                  {getThumbnailUrl(summary) && (
                     <img 
-                      src={getThumbnailUrl(summary.youtube_url) || ''} 
+                      src={getThumbnailUrl(summary) || ''} 
                       alt={`Thumbnail`} 
                       className="h-12 w-20 object-cover rounded"
+                      onError={(e) => {
+                        // Hide image if it fails to load (e.g., for playlists)
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   )}
                   <div className="truncate max-w-[300px]">

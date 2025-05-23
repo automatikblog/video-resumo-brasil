@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0';
@@ -55,9 +56,8 @@ function extractYouTubeId(url: string): string | null {
 
 // Extract YouTube playlist ID from URL
 function extractYouTubePlaylistId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|list=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2] ? match[2] : null;
+  const match = url.match(/[?&]list=([^&]+)/);
+  return match ? match[1] : null;
 }
 
 // Check if URL is a playlist
@@ -78,7 +78,6 @@ async function fetchTranscriptFromSupadata(videoId: string): Promise<string> {
     const url = `https://api.supadata.ai/v1/youtube/transcript?url=https://www.youtube.com/watch?v=${videoId}&text=true`;
     
     console.log(`Making request to: ${url}`);
-    console.log(`Using Supadata API key (first chars): ${supadataApiKey ? supadataApiKey.substring(0, 5) + '...' : 'not set'}`);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -157,6 +156,8 @@ async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<stri
       },
     });
 
+    console.log(`Supadata playlist API response status: ${response.status}`);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Supadata API error: ${response.status} - ${errorText}`);
@@ -164,12 +165,14 @@ async function fetchPlaylistVideosFromSupadata(playlistId: string): Promise<stri
     }
 
     const data = await response.json();
+    console.log('Playlist API response data:', data);
     
-    if (!data.videoIds || !data.videoIds.length) {
-      throw new Error('No videos found in playlist');
+    if (!data.videoIds || !Array.isArray(data.videoIds) || data.videoIds.length === 0) {
+      console.error('No videoIds in playlist response:', data);
+      throw new Error('No videos found in playlist or invalid response format');
     }
 
-    console.log(`Successfully retrieved ${data.videoIds.length} videos from playlist`);
+    console.log(`Successfully retrieved ${data.videoIds.length} videos from playlist:`, data.videoIds);
     return data.videoIds;
   } catch (error) {
     console.error('Error fetching playlist videos from Supadata:', error);
@@ -248,12 +251,12 @@ async function processSingleVideo(id: string, videoId: string): Promise<{transcr
 
 // Process a playlist
 async function processPlaylist(id: string, playlistId: string, url: string): Promise<{transcript: string, summary: string}> {
-  // 1. Get playlist video IDs
+  // 1. Get playlist video IDs using the correct Supadata API
   const videoIds = await fetchPlaylistVideosFromSupadata(playlistId);
   
-  console.log(`Processing playlist with ${videoIds.length} videos`);
+  console.log(`Processing playlist with ${videoIds.length} videos: ${videoIds.join(', ')}`);
   
-  // 2. Get transcripts for all videos
+  // 2. Get transcripts for all videos and concatenate them
   let combinedTranscript = `PLAYLIST TRANSCRIPTS FROM: ${url}\n\n`;
   const videoDetails = [];
   
@@ -265,6 +268,7 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
       // Get video details
       const details = await fetchYouTubeVideoDetails(videoId);
       videoDetails.push({
+        id: videoId,
         title: details.snippet.title,
         description: details.snippet.description
       });
@@ -272,8 +276,10 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
       // Get transcript
       const transcript = await fetchTranscriptFromSupadata(videoId);
       
-      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ${details.snippet.title} ---\n\n`;
+      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ${details.snippet.title} (ID: ${videoId}) ---\n\n`;
       combinedTranscript += transcript;
+      
+      console.log(`Successfully processed video ${i + 1}: ${details.snippet.title}`);
       
       // Update database with progress
       await supabase
@@ -287,7 +293,7 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
         
     } catch (error) {
       console.error(`Error processing video ${videoId}:`, error);
-      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ERROR PROCESSING ---\n\n`;
+      combinedTranscript += `\n\n--- VIDEO ${i + 1}: ERROR PROCESSING (ID: ${videoId}) ---\n\n`;
       combinedTranscript += `Error: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
@@ -296,7 +302,7 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
   console.log('Generating summary for playlist with OpenAI...');
   
   // Create a condensed version of the transcript for the summary generation
-  const playlistInfo = videoDetails.map((v, i) => `Video ${i + 1}: "${v.title}" - ${v.description.substring(0, 100)}...`).join('\n');
+  const playlistInfo = videoDetails.map((v, i) => `Video ${i + 1}: "${v.title}" (ID: ${v.id}) - ${v.description.substring(0, 100)}...`).join('\n');
   
   const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -313,7 +319,7 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
         },
         {
           role: "user",
-          content: `Summarize this YouTube playlist:\nPlaylist URL: ${url}\nVideos in playlist:\n${playlistInfo}\n\nCombined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
+          content: `Summarize this YouTube playlist:\nPlaylist URL: ${url}\nVideos in playlist (${videoDetails.length} total):\n${playlistInfo}\n\nCombined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
         }
       ],
     }),
@@ -396,8 +402,8 @@ serve(async (req) => {
       transcript = result.transcript;
       summary = result.summary;
       
-      // Get the first video ID for reference
-      videoId = extractYouTubeId(youtube_url) || '';
+      // Get the first video ID for reference (if available in URL)
+      videoId = extractYouTubeId(youtube_url) || null;
     } else {
       // Process as single video (including Shorts)
       videoId = extractYouTubeId(youtube_url);

@@ -48,3 +48,13 @@ export const extractVideoId = (url: string): string | null => {
   const match = url.match(regExp);
   return (match && match[7].length === 11) ? match[7] : null;
 };
+
+/**
+ * Extracts playlist ID from YouTube URL
+ * @param url The YouTube URL
+ * @returns The playlist ID or null if not found
+ */
+export const extractPlaylistId = (url: string): string | null => {
+  const match = url.match(/[?&]list=([^&]+)/);
+  return match ? match[1] : null;
+};
