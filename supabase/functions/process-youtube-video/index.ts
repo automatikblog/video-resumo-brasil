@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0';
@@ -32,6 +33,9 @@ interface ProcessVideoRequest {
   id: string;           // The UUID of the record to process
   youtube_url: string;  // The YouTube URL
 }
+
+// Helper function to introduce a delay
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Extract YouTube video ID from URL (including Shorts)
 function extractYouTubeId(url: string): string | null {
@@ -308,10 +312,19 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
           description: details.snippet.description
         });
         
+        // Add a delay between API calls to prevent rate limiting (2 seconds)
+        if (i > 0) {
+          console.log(`Waiting 2 seconds before processing next video to avoid rate limiting...`);
+          await sleep(2000);
+        }
+        
         // Get transcript
         const transcript = await fetchTranscriptFromSupadata(videoId);
         
-        combinedTranscript += `\n\n--- VIDEO ${i + 1}: ${details.snippet.title} (ID: ${videoId}) ---\n\n`;
+        // Add clear separation with video title, number, and horizontal rules
+        combinedTranscript += `\n\n${'='.repeat(80)}\n`;
+        combinedTranscript += `VIDEO ${i + 1}: ${details.snippet.title} (ID: ${videoId})\n`;
+        combinedTranscript += `${'='.repeat(80)}\n\n`;
         combinedTranscript += transcript;
         
         successCount++;
@@ -319,7 +332,11 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
         
       } catch (error) {
         console.error(`Error processing video ${videoId}:`, error);
-        combinedTranscript += `\n\n--- VIDEO ${i + 1}: ERROR PROCESSING (ID: ${videoId}) ---\n\n`;
+        
+        // Add error information to transcript with clear formatting
+        combinedTranscript += `\n\n${'='.repeat(80)}\n`;
+        combinedTranscript += `VIDEO ${i + 1}: ERROR PROCESSING (ID: ${videoId})\n`;
+        combinedTranscript += `${'='.repeat(80)}\n\n`;
         combinedTranscript += `Error: ${error instanceof Error ? error.message : String(error)}`;
       }
       

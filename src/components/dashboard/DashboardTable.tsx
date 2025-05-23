@@ -1,300 +1,202 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { resumeVideoProcessing } from '@/services/supabaseService';
-import { getCurrentLang, getLangString } from '@/services/languageService';
-import { extractVideoId } from '@/utils/youtubeUtils';
+
+import React from 'react';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow 
-} from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
+import { Clock, CheckCircle, XCircle, Loader2, Hourglass, ExternalLink, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR, enUS, es } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { VideoSummary } from '@/types/videoSummary';
+import { getYoutubeVideoId, getYoutubeThumbnailUrl } from '@/utils/youtubeUtils';
+import ExportTranscriptButton from '@/components/ExportTranscriptButton';
+import { resumeVideoProcessing } from '@/services/supabaseService';
 
 interface DashboardTableProps {
   summaries: VideoSummary[];
-  refreshSummaries: () => void;
 }
 
-const DashboardTable = ({ summaries, refreshSummaries }: DashboardTableProps) => {
-  const [processingIds, setProcessingIds] = useState<string[]>([]);
-  const navigate = useNavigate();
-  const currentLang = getCurrentLang();
-
-  const getDateLocale = () => {
-    switch (currentLang) {
-      case 'pt-BR': return ptBR;
-      case 'es-ES': return es;
-      default: return enUS;
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
+const DashboardTable: React.FC<DashboardTableProps> = ({ summaries }) => {
+  const handleRetryProcessing = async (id: string, url: string, isPlaylist: boolean) => {
     try {
-      return formatDistanceToNow(new Date(dateStr), { 
-        addSuffix: true,
-        locale: getDateLocale()
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending': return getLangString('pending', currentLang) || 'Pending';
-      case 'processing': return getLangString('processing', currentLang) || 'Processing';
-      case 'completed': return getLangString('completed', currentLang) || 'Completed';
-      case 'failed': return getLangString('failed', currentLang) || 'Failed';
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getThumbnailUrl = (summary: VideoSummary) => {
-    // Try to get video ID from the stored video_id field first
-    let videoId = summary.video_id;
-    
-    // If not available, extract from URL
-    if (!videoId) {
-      videoId = extractVideoId(summary.youtube_url);
-    }
-    
-    // Return thumbnail URL if we have a video ID
-    return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
-  };
-
-  const handleViewSummary = (id: string) => {
-    navigate(`/summary/${id}`);
-  };
-
-  const handleResumeProcessing = async (id: string, url: string, isPlaylist: boolean = false) => {
-    try {
-      setProcessingIds(prev => [...prev, id]);
       await resumeVideoProcessing(id, url, isPlaylist);
-      toast.success(getLangString('processingResumed', currentLang) || 'Processing resumed');
-      
-      // Refresh summaries list after a delay to see the updated status
-      setTimeout(() => {
-        refreshSummaries();
-        setProcessingIds(prev => prev.filter(itemId => itemId !== id));
-      }, 2000);
     } catch (error) {
-      console.error('Error resuming processing:', error);
-      toast.error(getLangString('resumeError', currentLang) || 'Failed to resume processing');
-      setProcessingIds(prev => prev.filter(itemId => itemId !== id));
+      console.error('Error retrying video processing:', error);
     }
   };
 
-  const canBeResumed = (status: string) => {
-    return status === 'failed' || status === 'pending';
-  };
-
-  const getErrorDetails = (errorMessage?: string) => {
-    if (!errorMessage) return null;
+  // Parse the error message from JSON if available
+  const parseErrorMessage = (errorMessage: string | null) => {
+    if (!errorMessage) return 'Unknown error';
     
     try {
-      // Try to parse as JSON if it's a detailed error object
       const errorObj = JSON.parse(errorMessage);
-      return {
-        message: errorObj.message || 'Unknown error',
-        timestamp: errorObj.timestamp ? new Date(errorObj.timestamp).toLocaleString() : null,
-        url: errorObj.url || null,
-        stack: errorObj.stack || null
-      };
-    } catch {
-      // If not JSON, return as plain text
-      return {
-        message: errorMessage,
-        timestamp: null,
-        url: null,
-        stack: null
-      };
+      return errorObj.message || 'Unknown error';
+    } catch (e) {
+      return errorMessage;
     }
   };
 
-  // Set up auto-refresh for processing videos
-  React.useEffect(() => {
-    // Check if any videos are processing
-    const hasProcessingVideos = summaries.some(
-      summary => summary.status === 'processing' || summary.status === 'pending'
-    );
-    
-    if (hasProcessingVideos) {
-      // Set up refresh interval while videos are processing
-      const intervalId = setInterval(() => {
-        console.log('Auto-refreshing summaries due to processing videos');
-        refreshSummaries();
-      }, 10000); // Check every 10 seconds
-      
-      return () => clearInterval(intervalId);
+  // Format status badge
+  const getStatusBadge = (status: VideoSummary['status'], errorMessage: string | null) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span>Pending</span>
+          </Badge>
+        );
+      case 'processing':
+        return (
+          <Badge variant="outline" className="flex items-center gap-1 bg-blue-50">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Processing</span>
+          </Badge>
+        );
+      case 'completed':
+        return (
+          <Badge variant="outline" className="flex items-center gap-1 bg-green-50">
+            <CheckCircle className="h-3 w-3" />
+            <span>Completed</span>
+          </Badge>
+        );
+      case 'failed':
+        const errorText = parseErrorMessage(errorMessage);
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="flex items-center gap-1 bg-red-50">
+                  <XCircle className="h-3 w-3" />
+                  <span>Failed</span>
+                  <Info className="h-3 w-3 ml-1" />
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm break-words bg-white p-3 rounded-md border">
+                <p className="font-medium text-sm text-destructive">Error:</p>
+                <p className="text-xs">{errorText}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      default:
+        return (
+          <Badge variant="outline">Unknown</Badge>
+        );
     }
-  }, [summaries, refreshSummaries]);
+  };
 
   if (summaries.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">{getLangString('noSummariesYet', currentLang)}</p>
+      <div className="text-center text-muted-foreground py-8">
+        No summaries found. Generate your first one above.
       </div>
     );
   }
 
   return (
-    <TooltipProvider>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{getLangString('videoTitle', currentLang)}</TableHead>
-              <TableHead>{getLangString('createdAt', currentLang)}</TableHead>
-              <TableHead>{getLangString('status', currentLang)}</TableHead>
-              <TableHead>{getLangString('type', currentLang) || 'Type'}</TableHead>
-              <TableHead className="text-right">{getLangString('actions', currentLang) || 'Actions'}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {summaries.map((summary) => {
-              const errorDetails = getErrorDetails(summary.error_message);
-              
-              return (
-                <TableRow key={summary.id} className="cursor-pointer hover:bg-muted/70">
-                  <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
-                    <div className="flex items-center space-x-3">
-                      {getThumbnailUrl(summary) && (
-                        <img 
-                          src={getThumbnailUrl(summary) || ''} 
-                          alt={`Thumbnail`} 
-                          className="h-12 w-20 object-cover rounded"
-                          onError={(e) => {
-                            // Hide image if it fails to load (e.g., for playlists)
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      )}
-                      <div className="truncate max-w-[300px]">
-                        <a 
-                          href={summary.youtube_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {summary.youtube_url}
-                        </a>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
-                    {formatDate(summary.created_at)}
-                  </TableCell>
-                  <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
-                    <div className="space-y-1">
-                      {summary.status === 'failed' && errorDetails ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium cursor-help ${getStatusColor(summary.status)}`}>
-                              {getStatusLabel(summary.status)}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-md p-3">
-                            <div className="space-y-2">
-                              <div className="font-semibold text-red-600">Error Details:</div>
-                              <div className="text-sm">{errorDetails.message}</div>
-                              {errorDetails.timestamp && (
-                                <div className="text-xs text-muted-foreground">
-                                  Time: {errorDetails.timestamp}
-                                </div>
-                              )}
-                              {errorDetails.url && (
-                                <div className="text-xs text-muted-foreground">
-                                  URL: {errorDetails.url}
-                                </div>
-                              )}
-                              {errorDetails.stack && (
-                                <details className="text-xs">
-                                  <summary className="cursor-pointer text-muted-foreground">Stack trace</summary>
-                                  <pre className="mt-1 whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded">
-                                    {errorDetails.stack}
-                                  </pre>
-                                </details>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(summary.status)}`}>
-                          {getStatusLabel(summary.status)}
-                        </span>
-                      )}
-                      
-                      {/* Show progress bar for processing items */}
-                      {(summary.status === 'processing' || processingIds.includes(summary.id)) && (
-                        <Progress 
-                          className="h-1.5 w-full bg-blue-100" 
-                          value={70}
-                          // We don't know the exact progress, so just animate it
-                          style={{animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"}}
-                        />
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[120px]">Video</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead className="hidden md:table-cell">Created</TableHead>
+            <TableHead className="w-[100px]">Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {summaries.map((summary) => {
+            const videoId = summary.video_id || getYoutubeVideoId(summary.youtube_url);
+            const isPlaylist = summary.is_playlist || false;
+            
+            return (
+              <TableRow key={summary.id}>
+                <TableCell className="p-0 pl-4">
+                  {videoId && (
+                    <div className="w-[100px] h-[56px] relative rounded-md overflow-hidden">
+                      <img 
+                        src={getYoutubeThumbnailUrl(videoId)} 
+                        alt="Video thumbnail" 
+                        className="object-cover w-full h-full"
+                      />
+                      {isPlaylist && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">Playlist</span>
+                        </div>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell onClick={() => summary.status === 'completed' && handleViewSummary(summary.id)}>
-                    {summary.is_playlist ? 
-                      (getLangString('playlist', currentLang) || 'Playlist') : 
-                      (getLangString('video', currentLang) || 'Video')
-                    }
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleViewSummary(summary.id)}
-                        disabled={summary.status !== 'completed'}
+                  )}
+                </TableCell>
+                <TableCell className="font-medium truncate max-w-[200px]">
+                  <a 
+                    href={summary.youtube_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:underline inline-flex items-center"
+                  >
+                    <span className="truncate block">{summary.youtube_url}</span>
+                    <ExternalLink className="ml-1 h-3 w-3 inline" />
+                  </a>
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">
+                  {formatDistanceToNow(new Date(summary.created_at), { addSuffix: true })}
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(summary.status, summary.error_message)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    {summary.status === 'failed' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRetryProcessing(
+                          summary.id, 
+                          summary.youtube_url,
+                          summary.is_playlist || false
+                        )}
+                        className="h-8"
                       >
-                        {getLangString('viewSummary', currentLang) || 'View'}
+                        <Hourglass className="h-4 w-4 mr-1" />
+                        <span>Retry</span>
                       </Button>
-                      
-                      {canBeResumed(summary.status) && (
+                    )}
+                    
+                    {summary.status === 'completed' && (
+                      <>
+                        <ExportTranscriptButton 
+                          transcriptId={summary.id}
+                          className="h-8"
+                        />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleResumeProcessing(summary.id, summary.youtube_url, summary.is_playlist || false)}
-                          disabled={processingIds.includes(summary.id)}
-                          className="bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-800"
+                          className={cn(
+                            "h-8",
+                            !summary.summary && "opacity-50 cursor-not-allowed"
+                          )}
+                          asChild
+                          disabled={!summary.summary}
                         >
-                          {processingIds.includes(summary.id) ? 
-                            (getLangString('resuming', currentLang) || 'Resuming...') : 
-                            (getLangString('resume', currentLang) || 'Resume')
-                          }
+                          <Link to={`/summary/${summary.id}`}>
+                            View
+                          </Link>
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </TooltipProvider>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
