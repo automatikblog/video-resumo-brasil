@@ -58,3 +58,21 @@ export const extractPlaylistId = (url: string): string | null => {
   const match = url.match(/[?&]list=([^&]+)/);
   return match ? match[1] : null;
 };
+
+/**
+ * Gets YouTube video ID from URL (alias for extractVideoId)
+ * @param url The YouTube URL
+ * @returns The video ID or null if not found
+ */
+export const getYoutubeVideoId = (url: string): string | null => {
+  return extractVideoId(url);
+};
+
+/**
+ * Gets YouTube thumbnail URL for a video ID
+ * @param videoId The YouTube video ID
+ * @returns The thumbnail URL
+ */
+export const getYoutubeThumbnailUrl = (videoId: string): string => {
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+};

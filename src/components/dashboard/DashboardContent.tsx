@@ -63,10 +63,7 @@ const DashboardContent = ({ summaries, refreshSummaries, isLoading = false }: Da
           </div>
         </CardHeader>
         <CardContent>
-          <DashboardTable 
-            summaries={summaries} 
-            refreshSummaries={refreshSummaries} 
-          />
+          <DashboardTable summaries={summaries} />
         </CardContent>
       </Card>
     </div>
