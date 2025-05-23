@@ -304,6 +304,12 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
       try {
         console.log(`Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
         
+        // Add a delay before each API call to respect rate limits (including the first one)
+        if (i >= 0) {
+          console.log(`Waiting 2 seconds before processing video ${i + 1} to avoid rate limiting...`);
+          await sleep(2000);
+        }
+        
         // Get video details
         const details = await fetchYouTubeVideoDetails(videoId);
         videoDetails.push({
@@ -311,12 +317,6 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
           title: details.snippet.title,
           description: details.snippet.description
         });
-        
-        // Add a delay between API calls to prevent rate limiting (2 seconds)
-        if (i > 0) {
-          console.log(`Waiting 2 seconds before processing next video to avoid rate limiting...`);
-          await sleep(2000);
-        }
         
         // Get transcript
         const transcript = await fetchTranscriptFromSupadata(videoId);

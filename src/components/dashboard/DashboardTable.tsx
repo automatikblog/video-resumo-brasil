@@ -37,6 +37,29 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ summaries }) => {
     }
   };
 
+  // Enhanced function to get video ID for both regular videos and playlists
+  const getVideoIdForThumbnail = (summary: VideoSummary): string | null => {
+    // First try to use the stored video_id
+    if (summary.video_id) {
+      return summary.video_id;
+    }
+    
+    // For playlists, try to extract video ID from URL if it contains one
+    if (summary.is_playlist && summary.youtube_url.includes('v=')) {
+      const videoId = getYoutubeVideoId(summary.youtube_url);
+      if (videoId) {
+        return videoId;
+      }
+    }
+    
+    // For regular videos, extract from URL
+    if (!summary.is_playlist) {
+      return getYoutubeVideoId(summary.youtube_url);
+    }
+    
+    return null;
+  };
+
   // Format status badge
   const getStatusBadge = (status: VideoSummary['status'], errorMessage: string | null) => {
     switch (status) {
@@ -110,24 +133,34 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ summaries }) => {
         </TableHeader>
         <TableBody>
           {summaries.map((summary) => {
-            const videoId = summary.video_id || getYoutubeVideoId(summary.youtube_url);
+            const videoId = getVideoIdForThumbnail(summary);
             const isPlaylist = summary.is_playlist || false;
             
             return (
               <TableRow key={summary.id}>
                 <TableCell className="p-0 pl-4">
-                  {videoId && (
+                  {videoId ? (
                     <div className="w-[100px] h-[56px] relative rounded-md overflow-hidden">
                       <img 
                         src={getYoutubeThumbnailUrl(videoId)} 
                         alt="Video thumbnail" 
                         className="object-cover w-full h-full"
+                        onError={(e) => {
+                          // Fallback if thumbnail fails to load
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       {isPlaylist && (
                         <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                           <span className="text-white text-xs font-medium">Playlist</span>
                         </div>
                       )}
+                    </div>
+                  ) : (
+                    <div className="w-[100px] h-[56px] bg-gray-200 rounded-md flex items-center justify-center">
+                      <span className="text-gray-500 text-xs">
+                        {isPlaylist ? 'Playlist' : 'No Preview'}
+                      </span>
                     </div>
                   )}
                 </TableCell>
