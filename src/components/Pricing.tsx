@@ -1,120 +1,129 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentLang, getLangString } from '@/services/languageService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const Pricing = () => {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const currentLang = getCurrentLang();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   
-  const plans = [
+  const creditPackages = [
     {
-      name: getLangString('freePlan', currentLang),
-      price: getLangString('freePrice', currentLang),
-      billing: getLangString('forever', currentLang),
-      description: getLangString('freeDesc', currentLang),
+      name: "Starter",
+      credits: 30,
+      price: "$3.99",
+      description: "Ideal for students or hobbyists",
       features: [
-        getLangString('feature3SummariesPerDay', currentLang),
-        getLangString('featureVideosUpTo10Min', currentLang),
-        getLangString('featureBasicTranscriptions', currentLang),
-        getLangString('featureEmailSupport', currentLang)
+        "Access to bulk transcript extractor",
+        "Extract transcripts from channels, playlists, or individual videos",
+        "Multiple export formats (TXT, JSON, CSV, SRT, VTT)",
+        "Combine multiple transcripts into a single file or export individually",
+        "Support via Discord or email"
       ],
       popular: false,
-      buttonText: getLangString('startFree', currentLang)
+      buttonText: "Purchase Credits",
+      badge: "Try it out with minimal investment"
     },
     {
-      name: getLangString('proPlan', currentLang),
-      price: getLangString('proPrice', currentLang),
-      billing: getLangString('perMonth', currentLang),
-      description: getLangString('proDesc', currentLang),
+      name: "Most Popular",
+      credits: 100,
+      price: "$7.99",
+      description: "Perfect for professionals & content creators",
       features: [
-        getLangString('feature30SummariesPerDay', currentLang),
-        getLangString('featureVideosUpTo1Hour', currentLang),
-        getLangString('featureDetailedTranscriptions', currentLang),
-        getLangString('featureSaveTranscriptions', currentLang),
-        getLangString('featurePrioritySupport', currentLang)
+        "Access to bulk transcript extractor",
+        "Extract transcripts from channels, playlists, or individual videos",
+        "Multiple export formats (TXT, JSON, CSV, SRT, VTT)",
+        "Combine multiple transcripts into a single file or export individually",
+        "Support via Discord or email"
       ],
       popular: true,
-      buttonText: getLangString('buyNow', currentLang)
+      buttonText: "Purchase Credits",
+      badge: "Best value for most users"
     },
     {
-      name: getLangString('businessPlan', currentLang),
-      price: getLangString('businessPrice', currentLang),
-      billing: getLangString('perMonth', currentLang),
-      description: getLangString('businessDesc', currentLang),
+      name: "High Volume",
+      credits: 300,
+      price: "$19.99",
+      description: "Best for powerusers, agencies & teams",
       features: [
-        getLangString('featureUnlimitedSummaries', currentLang),
-        getLangString('featureVideosUpTo3Hours', currentLang),
-        getLangString('featureAdvancedTranscriptions', currentLang),
-        getLangString('featureUnlimitedLibrary', currentLang),
-        getLangString('featureAPIIntegration', currentLang),
-        getLangString('featureDedicatedSupport', currentLang)
+        "Access to bulk transcript extractor",
+        "Extract transcripts from channels, playlists, or individual videos",
+        "Multiple export formats (TXT, JSON, CSV, SRT, VTT)",
+        "Combine multiple transcripts into a single file or export individually",
+        "Support via Discord or email"
       ],
       popular: false,
-      buttonText: getLangString('contactUs', currentLang)
+      buttonText: "Purchase Credits",
+      badge: "For high-volume needs"
     }
   ];
+
+  const handlePurchaseClick = (packageName: string) => {
+    if (!user) {
+      // Redirect to sign up if not logged in
+      navigate('/auth');
+    } else {
+      // Redirect to dashboard credits section when logged in
+      navigate('/dashboard#credits');
+    }
+  };
 
   return (
     <section id="precos" className="section-padding bg-gradient-to-b from-white to-accent/20">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="gradient-text">{getLangString('pricingTitle', currentLang)}</span>
+            <span className="gradient-text">Credit Packages</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            {getLangString('pricingSubtitle', currentLang)}
+            Choose the perfect credit package for your video summarization needs
           </p>
-          
-          <div className="flex items-center justify-center mb-8">
-            <Button
-              variant={billingCycle === 'monthly' ? 'default' : 'outline'}
-              className={`rounded-r-none ${billingCycle === 'monthly' ? 'bg-brand-purple hover:bg-brand-deepPurple' : ''}`}
-              onClick={() => setBillingCycle('monthly')}
-            >
-              {getLangString('monthly', currentLang)}
-            </Button>
-            <Button
-              variant={billingCycle === 'yearly' ? 'default' : 'outline'}
-              className={`rounded-l-none ${billingCycle === 'yearly' ? 'bg-brand-purple hover:bg-brand-deepPurple' : ''}`}
-              onClick={() => setBillingCycle('yearly')}
-            >
-              {getLangString('yearly', currentLang)} <Badge className="ml-2 bg-green-500 text-white">{getLangString('discount', currentLang)}</Badge>
-            </Button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan, index) => (
+          {creditPackages.map((pkg, index) => (
             <Card 
               key={index} 
-              className={`border ${plan.popular ? 'border-brand-purple shadow-lg relative scale-105 z-10' : 'border-border/50'} transition-all hover:shadow-md`}
+              className={`border ${pkg.popular ? 'border-red-500 shadow-lg relative scale-105 z-10' : 'border-border/50'} transition-all hover:shadow-md`}
             >
-              {plan.popular && (
+              {pkg.popular && (
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <Badge className="bg-brand-purple hover:bg-brand-deepPurple px-3 py-1 text-sm">{getLangString('mostPopular', currentLang)}</Badge>
+                  <Badge className="bg-red-500 hover:bg-red-600 px-3 py-1 text-sm text-white">{pkg.name}</Badge>
                 </div>
               )}
               
               <CardHeader>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground ml-2">/{plan.billing}</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <CardTitle className="text-2xl">{pkg.popular ? 'Most Popular' : pkg.name}</CardTitle>
+                  {!pkg.popular && (
+                    <Badge variant="outline" className="text-xs">{pkg.badge}</Badge>
+                  )}
                 </div>
-                <CardDescription className="mt-2">{plan.description}</CardDescription>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">{pkg.credits} Credits</span>
+                </div>
+                <div className="mt-2">
+                  <span className="text-3xl font-bold text-brand-purple">{pkg.price}</span>
+                </div>
+                <CardDescription className="mt-2">{pkg.description}</CardDescription>
+                {pkg.popular && (
+                  <Badge className="bg-red-50 text-red-600 border-red-200 mt-2 w-fit">{pkg.badge}</Badge>
+                )}
               </CardHeader>
               
               <CardContent>
                 <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
+                  {pkg.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start">
-                      <svg className="w-5 h-5 mr-2 text-brand-purple flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <svg className="w-5 h-5 mr-2 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span>{feature}</span>
+                      <span className="text-sm">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -122,13 +131,14 @@ const Pricing = () => {
               
               <CardFooter>
                 <Button 
-                  className={`w-full ${plan.popular 
-                    ? 'bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90' 
-                    : ''}`}
-                  variant={plan.popular ? 'default' : 'outline'}
-                  onClick={() => plan.name !== getLangString('freePlan', currentLang) && handleSubscribe(plan.name)}
+                  className={`w-full ${pkg.popular 
+                    ? 'bg-red-500 hover:bg-red-600 text-white' 
+                    : pkg.name === 'High Volume' 
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                      : 'bg-gray-700 hover:bg-gray-800 text-white'}`}
+                  onClick={() => handlePurchaseClick(pkg.name)}
                 >
-                  {plan.buttonText}
+                  {pkg.buttonText}
                 </Button>
               </CardFooter>
             </Card>
@@ -137,12 +147,6 @@ const Pricing = () => {
       </div>
     </section>
   );
-
-  function handleSubscribe(planName: string) {
-    // This will be connected to Stripe checkout later
-    console.log(`Subscribing to ${planName} plan`);
-    // We'll implement the Stripe checkout here
-  }
 };
 
 export default Pricing;

@@ -19,6 +19,7 @@ import {
 } from '@/services/languageService';
 import { Globe, User, LogOut, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
+import TokenDisplay from './TokenDisplay';
 
 const Header = () => {
   const { user } = useAuth();
@@ -110,6 +111,9 @@ const Header = () => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Token Display for logged-in users */}
+          {user && <TokenDisplay />}
 
           {/* User Menu or Auth Buttons */}
           {user ? (
