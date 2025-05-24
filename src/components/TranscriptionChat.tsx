@@ -188,25 +188,12 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
     }
   };
 
-  // Debug display at the top of the component
-  const debugInfo = (
-    <div className="mb-2 text-xs text-gray-500 p-2 bg-gray-100 rounded-md">
-      <div><strong>Transcript ID:</strong> {transcriptionId}</div>
-      <div><strong>Transcript Length:</strong> {transcriptionText?.length || 0} chars</div>
-      <div><strong>Messages count:</strong> {messages.length}</div>
-      {errorDetails && <div className="text-red-500 mt-1"><strong>Last Error:</strong> {errorDetails}</div>}
-    </div>
-  );
-
   return (
     <Card className="mt-8 shadow-lg">
       <CardHeader className="bg-gradient-to-r from-brand-purple to-brand-blue text-white rounded-t-lg">
         <CardTitle>{getLangString('chatWithTranscription', currentLang)}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Debug information */}
-        {debugInfo}
-        
         <ScrollArea className="h-[400px] p-4">
           <div className="space-y-4">
             {messages.map((message) => (

@@ -105,7 +105,7 @@ const Summary = () => {
           onClick={handleGoBack} 
           className="mb-6"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" /> {getLangString('backToDashboard', currentLang) || 'Back to Dashboard'}
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -173,13 +173,13 @@ const Summary = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-3 mb-4">
                 <TabsTrigger value="summary" className="flex items-center">
-                  <FileText className="mr-2 h-4 w-4" /> {getLangString('summary', currentLang) || 'Summary'}
+                  <FileText className="mr-2 h-4 w-4" /> Summary
                 </TabsTrigger>
                 <TabsTrigger value="transcript" className="flex items-center">
-                  <FileSpreadsheet className="mr-2 h-4 w-4" /> {getLangString('transcript', currentLang) || 'Transcript'}
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Transcript
                 </TabsTrigger>
                 <TabsTrigger value="chat" className="flex items-center">
-                  <MessageCircle className="mr-2 h-4 w-4" /> {getLangString('chat', currentLang) || 'Chat'}
+                  <MessageCircle className="mr-2 h-4 w-4" /> Chat
                 </TabsTrigger>
               </TabsList>
               
@@ -215,7 +215,7 @@ const Summary = () => {
                 <Card className="shadow-lg border-border/50 mb-6">
                   <CardHeader>
                     <CardTitle className="text-2xl font-bold gradient-text">
-                      {getLangString('videoTranscript', currentLang) || 'Full Transcript'}
+                      Video Transcript
                     </CardTitle>
                     {summaryData.status !== 'completed' && (
                       <CardDescription>
@@ -242,7 +242,7 @@ const Summary = () => {
                 <Card className="shadow-lg border-border/50">
                   <CardHeader>
                     <CardTitle className="text-2xl font-bold gradient-text">
-                      {getLangString('chatWithContent', currentLang) || 'Chat with this Content'}
+                      Chat With Transcript
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
