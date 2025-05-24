@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { getUserCredits } from '@/services/creditsService';
 import { Coins } from 'lucide-react';
 
 const TokenDisplay = () => {
@@ -19,19 +19,11 @@ const TokenDisplay = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('user_credits')
-        .select('credits')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching tokens:', error);
-      } else {
-        setTokens(data?.credits || 0);
-      }
+      const credits = await getUserCredits(user.id);
+      setTokens(credits);
     } catch (error) {
       console.error('Error fetching tokens:', error);
+      setTokens(0);
     } finally {
       setLoading(false);
     }
