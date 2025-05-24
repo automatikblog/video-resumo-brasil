@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ summaries }) => {
     
     try {
       const errorObj = JSON.parse(errorMessage);
-      return errorObj.message || 'Unknown error';
+      return errorObj.message || errorMessage;
     } catch (e) {
       return errorMessage;
     }
@@ -60,7 +61,7 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ summaries }) => {
     return null;
   };
 
-  // Format status badge
+  // Format status badge with improved error tooltip
   const getStatusBadge = (status: VideoSummary['status'], errorMessage: string | null) => {
     switch (status) {
       case 'pending':
@@ -91,15 +92,21 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ summaries }) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Badge variant="outline" className="flex items-center gap-1 bg-red-50">
+                <Badge variant="outline" className="flex items-center gap-1 bg-red-50 cursor-help">
                   <XCircle className="h-3 w-3" />
                   <span>Failed</span>
                   <Info className="h-3 w-3 ml-1" />
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm break-words bg-white p-3 rounded-md border">
-                <p className="font-medium text-sm text-destructive">Error:</p>
-                <p className="text-xs">{errorText}</p>
+              <TooltipContent 
+                className="max-w-sm break-words bg-white p-3 rounded-md border shadow-lg z-50"
+                side="top"
+                align="center"
+              >
+                <div className="space-y-2">
+                  <p className="font-medium text-sm text-destructive">Error Details:</p>
+                  <p className="text-xs leading-relaxed">{errorText}</p>
+                </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -275,11 +275,19 @@ Transcript: "${truncatedTranscript}"`
   
   const summaryData = await summaryResponse.json();
   
-  if (!summaryData[0]?.candidates?.[0]?.content?.parts?.[0]?.text) {
-    throw new Error(`Unexpected Gemini API response format: ${JSON.stringify(summaryData)}`);
+  console.log('Gemini API response structure:', {
+    hasCandidates: !!summaryData.candidates,
+    candidatesLength: summaryData.candidates?.length || 0,
+    firstCandidate: summaryData.candidates?.[0] || null
+  });
+  
+  // Fixed: Use the correct response structure for Gemini API
+  if (!summaryData.candidates?.[0]?.content?.parts?.[0]?.text) {
+    console.error('Invalid Gemini API response structure:', summaryData);
+    throw new Error(`Invalid Gemini API response structure: ${JSON.stringify(summaryData).substring(0, 100)}...`);
   }
   
-  const summary = summaryData[0].candidates[0].content.parts[0].text;
+  const summary = summaryData.candidates[0].content.parts[0].text;
   console.log('Summary generated successfully');
   
   return summary;
@@ -423,11 +431,12 @@ Combined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
     
     const summaryData = await summaryResponse.json();
     
-    if (!summaryData[0]?.candidates?.[0]?.content?.parts?.[0]?.text) {
+    // Fixed: Use the correct response structure for Gemini API
+    if (!summaryData.candidates?.[0]?.content?.parts?.[0]?.text) {
       throw new Error(`Unexpected Gemini API response format: ${JSON.stringify(summaryData)}`);
     }
     
-    const summary = summaryData[0].candidates[0].content.parts[0].text;
+    const summary = summaryData.candidates[0].content.parts[0].text;
     console.log('Playlist summary generated successfully');
     
     return { transcript: combinedTranscript, summary };
