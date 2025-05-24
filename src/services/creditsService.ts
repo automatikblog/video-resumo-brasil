@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getUserCredits = async (userId: string): Promise<number> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('user_credits')
       .select('credits')
       .eq('user_id', userId)
@@ -27,7 +27,7 @@ export const getUserCredits = async (userId: string): Promise<number> => {
 
 export const createUserCredits = async (userId: string, credits: number = 0): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_credits')
       .insert([{ user_id: userId, credits }]);
 
@@ -43,7 +43,7 @@ export const createUserCredits = async (userId: string, credits: number = 0): Pr
 
 export const updateUserCredits = async (userId: string, credits: number): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_credits')
       .update({ credits, updated_at: new Date().toISOString() })
       .eq('user_id', userId);
