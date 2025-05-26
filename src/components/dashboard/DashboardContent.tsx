@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardTable from './DashboardTable';
 import CreditsSection from './CreditsSection';
+import LinkAnonymousTranscripts from './LinkAnonymousTranscripts';
 import { VideoSummary } from '@/types/videoSummary';
 import { Loader2, RefreshCw, FileVideo, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,11 @@ const DashboardContent = ({ summaries, refreshSummaries, isLoading = false }: Da
         <TabsContent value="summaries" className="space-y-6">
           {/* Video Input Component */}
           <VideoInput onVideoSubmitted={refreshSummaries} />
+          
+          {/* Link Anonymous Transcripts Component - show only if user has no summaries */}
+          {summaries.length === 0 && (
+            <LinkAnonymousTranscripts onTranscriptsLinked={refreshSummaries} />
+          )}
           
           <Card className="shadow-lg border-border/50">
             <CardHeader className="flex flex-row items-center justify-between">

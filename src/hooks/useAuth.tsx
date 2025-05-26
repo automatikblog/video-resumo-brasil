@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { linkAnonymousTranscripts } from '@/services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -23,10 +24,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     // Set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
+
+        // When user signs in, link their anonymous transcripts
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          // Use setTimeout to avoid blocking the auth state change
+          setTimeout(() => {
+            linkAnonymousTranscripts(newSession.user.id);
+          }, 0);
+        }
       }
     );
 

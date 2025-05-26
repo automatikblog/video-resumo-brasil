@@ -1,12 +1,40 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
+import { getFingerprint } from "./fingerprintService";
 
 export interface AuthState {
   user: User | null;
   session: Session | null;
   loading: boolean;
 }
+
+// Link anonymous transcripts to authenticated user
+export const linkAnonymousTranscripts = async (userId: string) => {
+  try {
+    const fingerprint = await getFingerprint();
+    
+    // Update all video_summaries that belong to this fingerprint to now belong to the user
+    const { error } = await supabase
+      .from('video_summaries')
+      .update({ 
+        user_id: userId,
+        fingerprint: null // Clear the fingerprint since it's now linked to a user
+      })
+      .eq('fingerprint', fingerprint)
+      .is('user_id', null); // Only update records that don't already have a user_id
+
+    if (error) {
+      console.error('Error linking anonymous transcripts:', error);
+      throw error;
+    }
+
+    console.log('Successfully linked anonymous transcripts to user:', userId);
+  } catch (error) {
+    console.error('Failed to link anonymous transcripts:', error);
+    // Don't throw here - we don't want to break the auth flow if this fails
+  }
+};
 
 // Google Sign In
 export const signInWithGoogle = async () => {
