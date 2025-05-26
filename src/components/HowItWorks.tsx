@@ -8,30 +8,33 @@ const HowItWorks = () => {
   const steps = [
     {
       number: '01',
-      title: currentLang === 'en-US' ? 'Paste the link' : 
-             currentLang === 'es-ES' ? 'Pegar el enlace' : 
-             'Cole o link',
-      description: currentLang === 'en-US' ? 'Copy the URL of any YouTube video or playlist and paste it into the input field.' : 
-                   currentLang === 'es-ES' ? 'Copie la URL de cualquier video o lista de reproducción de YouTube y péguela en el campo de entrada.' : 
-                   'Copie a URL de qualquer vídeo ou playlist do YouTube e cole-a no campo de entrada.'
+      title: currentLang === 'en-US' ? 'Paste YouTube URL' : 
+             currentLang === 'es-ES' ? 'Pegar URL de YouTube' : 
+             'Cole a URL do YouTube',
+      description: currentLang === 'en-US' ? 'Simply copy and paste any YouTube video URL into our tool. Works with individual videos, playlists, and channel content.' : 
+                   currentLang === 'es-ES' ? 'Simplemente copia y pega cualquier URL de video de YouTube en nuestra herramienta. Funciona con videos individuales, listas de reproducción y contenido de canal.' : 
+                   'Simplesmente copie e cole qualquer URL de vídeo do YouTube em nossa ferramenta. Funciona com vídeos individuais, playlists e conteúdo de canal.',
+      icon: '📋'
     },
     {
       number: '02',
-      title: currentLang === 'en-US' ? 'Processing' : 
-             currentLang === 'es-ES' ? 'Procesamiento' : 
-             'Processamento',
-      description: currentLang === 'en-US' ? 'Our system analyzes the content of the video, including audio and important visual elements.' : 
-                   currentLang === 'es-ES' ? 'Nuestro sistema analiza el contenido del video, incluyendo audio y elementos visuales importantes.' : 
-                   'Nosso sistema analisa o conteúdo do vídeo, incluindo áudio e elementos visuais importantes.'
+      title: currentLang === 'en-US' ? 'AI Processing' : 
+             currentLang === 'es-ES' ? 'Procesamiento con IA' : 
+             'Processamento com IA',
+      description: currentLang === 'en-US' ? 'Our advanced AI extracts the audio, processes the speech, and generates accurate transcriptions with timestamps and speaker identification.' : 
+                   currentLang === 'es-ES' ? 'Nuestra IA avanzada extrae el audio, procesa el habla y genera transcripciones precisas con marcas de tiempo e identificación de hablantes.' : 
+                   'Nossa IA avançada extrai o áudio, processa a fala e gera transcrições precisas com timestamps e identificação de falantes.',
+      icon: '🤖'
     },
     {
       number: '03',
-      title: currentLang === 'en-US' ? 'Transcription generated' : 
-             currentLang === 'es-ES' ? 'Transcripción generada' : 
-             'Transcrição gerada',
-      description: currentLang === 'en-US' ? 'Receive a complete transcription with all the important points of the video in a matter of seconds.' : 
-                   currentLang === 'es-ES' ? 'Reciba una transcripción completa con todos los puntos importantes del video en cuestión de segundos.' : 
-                   'Receba uma transcrição completa com todos os pontos importantes do vídeo em questão de segundos.'
+      title: currentLang === 'en-US' ? 'Get Results Instantly' : 
+             currentLang === 'es-ES' ? 'Obtener Resultados Instantáneamente' : 
+             'Obtenha Resultados Instantaneamente',
+      description: currentLang === 'en-US' ? 'Download transcripts in multiple formats (TXT, JSON, CSV, SRT, VTT), get AI-powered summaries, and chat with the content using our AI assistant.' : 
+                   currentLang === 'es-ES' ? 'Descarga transcripciones en múltiples formatos (TXT, JSON, CSV, SRT, VTT), obtén resúmenes con IA y chatea con el contenido usando nuestro asistente de IA.' : 
+                   'Baixe transcrições em múltiplos formatos (TXT, JSON, CSV, SRT, VTT), obtenha resumos com IA e converse com o conteúdo usando nosso assistente de IA.',
+      icon: '⚡'
     }
   ];
 
@@ -40,12 +43,16 @@ const HowItWorks = () => {
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="gradient-text">{getLangString('howItWorks', currentLang)}</span>
+            <span className="gradient-text">
+              {currentLang === 'en-US' ? 'How It Works' : 
+               currentLang === 'es-ES' ? 'Cómo Funciona' : 
+               'Como Funciona'}
+            </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            {currentLang === 'en-US' ? 'Our process is simple and efficient so you can save time quickly.' : 
-             currentLang === 'es-ES' ? 'Nuestro proceso es simple y eficiente para que pueda ahorrar tiempo rápidamente.' : 
-             'Nosso processo é simples e eficiente para que você possa economizar tempo rapidamente.'}
+            {currentLang === 'en-US' ? 'Transform any YouTube video into searchable, actionable content in three simple steps.' : 
+             currentLang === 'es-ES' ? 'Transforma cualquier video de YouTube en contenido buscable y procesable en tres simples pasos.' : 
+             'Transforme qualquer vídeo do YouTube em conteúdo pesquisável e acionável em três passos simples.'}
           </p>
         </div>
 
@@ -53,13 +60,14 @@ const HowItWorks = () => {
           {steps.map((step, index) => (
             <div 
               key={index} 
-              className="relative border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+              className="relative border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col text-center"
             >
-              <div className="bg-gradient-to-r from-brand-purple to-brand-blue text-white text-xl font-bold rounded-full w-12 h-12 flex items-center justify-center mb-6">
+              <div className="text-4xl mb-4">{step.icon}</div>
+              <div className="bg-gradient-to-r from-brand-purple to-brand-blue text-white text-xl font-bold rounded-full w-12 h-12 flex items-center justify-center mb-6 mx-auto">
                 {step.number}
               </div>
               <h3 className="text-xl font-bold mb-4">{step.title}</h3>
-              <p className="text-muted-foreground">{step.description}</p>
+              <p className="text-muted-foreground flex-grow">{step.description}</p>
               
               {index < steps.length - 1 && (
                 <div className="hidden md:block absolute top-1/2 left-full -translate-y-1/2 -translate-x-1/2 transform">
@@ -70,6 +78,16 @@ const HowItWorks = () => {
               )}
             </div>
           ))}
+        </div>
+
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center gap-4 px-6 py-3 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-full">
+            <span className="text-green-600 font-semibold">
+              {currentLang === 'en-US' ? '⏱️ Average processing time: 30 seconds' : 
+               currentLang === 'es-ES' ? '⏱️ Tiempo promedio de procesamiento: 30 segundos' : 
+               '⏱️ Tempo médio de processamento: 30 segundos'}
+            </span>
+          </div>
         </div>
       </div>
     </section>
