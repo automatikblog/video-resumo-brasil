@@ -1,7 +1,7 @@
 
-// No need for XHR module as Stripe doesn't require it
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,8 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
     }
@@ -30,21 +29,9 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const { plan } = await req.json();
+    const { packageName, credits, price } = await req.json();
     
-    // Price IDs should be configured in your Stripe dashboard
-    let priceId;
-    
-    switch (plan) {
-      case 'Pro':
-        priceId = 'price_pro'; // Replace with actual price_id from Stripe
-        break;
-      case 'Business':
-        priceId = 'price_business'; // Replace with actual price_id from Stripe
-        break;
-      default:
-        throw new Error("Invalid plan selected");
-    }
+    console.log(`Creating checkout for package: ${packageName}, credits: ${credits}, price: ${price}`);
     
     // Get user information from Supabase
     const token = authHeader.replace("Bearer ", "");
@@ -68,22 +55,52 @@ serve(async (req) => {
     if (!userData || !userData.email) {
       throw new Error("Failed to get user information or user is not authenticated");
     }
+
+    console.log(`Creating checkout for user: ${userData.email}`);
+    
+    // Check if customer already exists
+    const customers = await stripe.customers.list({
+      email: userData.email,
+      limit: 1,
+    });
+    
+    let customerId;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+      console.log(`Existing customer found: ${customerId}`);
+    } else {
+      console.log("Creating new customer");
+    }
     
     // Create a Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      customer: customerId,
+      customer_email: customerId ? undefined : userData.email,
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `${credits} Credits - ${packageName}`,
+              description: `${credits} video transcription credits`,
+            },
+            unit_amount: Math.round(parseFloat(price.replace('$', '')) * 100), // Convert to cents
+          },
           quantity: 1,
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/dashboard`,
-      customer_email: userData.email,
+      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}&credits=${credits}`,
+      cancel_url: `${req.headers.get("origin")}/dashboard?tab=credits`,
       client_reference_id: userData.id,
+      metadata: {
+        credits: credits.toString(),
+        user_id: userData.id,
+        package_name: packageName,
+      },
     });
+    
+    console.log(`Checkout session created: ${session.id}`);
     
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },

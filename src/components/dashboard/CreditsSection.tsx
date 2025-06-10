@@ -1,11 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, Zap, Star } from 'lucide-react';
+import { Coins, Zap, Star, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const CreditsSection = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState<string | null>(null);
+
   const creditPackages = [
     {
       name: "Starter",
@@ -39,9 +45,43 @@ const CreditsSection = () => {
     }
   ];
 
-  const handlePurchase = (packageName: string, credits: number, price: string) => {
-    console.log(`Purchasing ${packageName}: ${credits} credits for ${price}`);
-    // This will be connected to Stripe later
+  const handlePurchase = async (packageName: string, credits: number, price: string) => {
+    if (!user) {
+      toast.error('Please sign in to purchase credits');
+      return;
+    }
+
+    setLoading(packageName);
+    
+    try {
+      console.log(`Initiating purchase for ${packageName}: ${credits} credits at ${price}`);
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          packageName,
+          credits,
+          price
+        }
+      });
+
+      if (error) {
+        console.error('Checkout error:', error);
+        throw error;
+      }
+
+      if (data?.url) {
+        console.log('Redirecting to Stripe checkout:', data.url);
+        // Open Stripe checkout in the same tab
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast.error('Failed to create checkout session. Please try again.');
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -95,8 +135,16 @@ const CreditsSection = () => {
               <Button 
                 className={`w-full text-white ${pkg.buttonColor}`}
                 onClick={() => handlePurchase(pkg.name, pkg.credits, pkg.price)}
+                disabled={loading === pkg.name}
               >
-                Purchase {pkg.credits} Credits
+                {loading === pkg.name ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  `Purchase ${pkg.credits} Credits`
+                )}
               </Button>
             </CardFooter>
           </Card>
