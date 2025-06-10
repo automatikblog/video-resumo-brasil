@@ -38,19 +38,21 @@ const PaymentSuccess = () => {
 
     const verifyPayment = async () => {
       try {
-        console.log('Verifying payment session:', sessionId);
+        console.log('Starting payment verification for session:', sessionId);
         
         const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-payment', {
           body: { session_id: sessionId }
         });
+
+        console.log('Verification response:', verificationData, 'Error:', verificationError);
 
         if (verificationError) {
           console.error('Payment verification error:', verificationError);
           throw new Error(verificationError.message || 'Failed to verify payment');
         }
 
-        if (!verificationData.success) {
-          throw new Error(verificationData.error || 'Payment verification failed');
+        if (!verificationData || !verificationData.success) {
+          throw new Error(verificationData?.error || 'Payment verification failed');
         }
 
         // Get updated credits from database
