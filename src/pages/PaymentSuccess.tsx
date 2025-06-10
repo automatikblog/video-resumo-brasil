@@ -12,6 +12,8 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 
 const PaymentSuccess = () => {
+  console.log('[PAYMENT-SUCCESS] Component loading...');
+  
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,6 +35,7 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
+    console.log('[PAYMENT-SUCCESS] Component mounted');
     addDebugLog('=== PÁGINA PAYMENT SUCCESS CARREGADA ===');
     addDebugLog(`URL atual: ${window.location.href}`);
     addDebugLog(`Parâmetros da URL: ${window.location.search}`);
@@ -138,10 +141,6 @@ const PaymentSuccess = () => {
     verifyPayment();
   }, [user, sessionId, creditsParam, navigate, retryCount]);
 
-  if (!user) {
-    return null;
-  }
-
   // Debug panel (always visible for now)
   const DebugPanel = () => (
     <Card className="mt-4 bg-gray-50">
@@ -168,6 +167,29 @@ const PaymentSuccess = () => {
       </CardContent>
     </Card>
   );
+
+  console.log('[PAYMENT-SUCCESS] Rendering component');
+
+  // Simple test render first
+  if (!user) {
+    console.log('[PAYMENT-SUCCESS] No user, rendering null');
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <Card className="text-center py-8">
+              <CardContent>
+                <p>Usuário não encontrado. Redirecionando...</p>
+              </CardContent>
+            </Card>
+            <DebugPanel />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // Error state
   if (error && !processing) {
