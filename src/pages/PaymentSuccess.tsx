@@ -30,17 +30,16 @@ const PaymentSuccess = () => {
       return;
     }
 
+    if (!sessionId) {
+      setError('Missing payment session information');
+      setProcessing(false);
+      return;
+    }
+
     const verifyPayment = async () => {
       try {
-        console.log('Verifying payment...');
-        console.log('Session ID:', sessionId);
-        console.log('Credits param:', creditsParam);
+        console.log('Verifying payment session:', sessionId);
         
-        if (!sessionId) {
-          throw new Error('Missing payment session information');
-        }
-
-        // Verify the payment session with Stripe
         const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-payment', {
           body: { session_id: sessionId }
         });
@@ -56,22 +55,29 @@ const PaymentSuccess = () => {
 
         // Get updated credits from database
         const updatedCredits = await getUserCredits(user.id);
-        const creditsAdded = parseInt(creditsParam || '0');
+        const creditsAdded = verificationData.credits_added || parseInt(creditsParam || '0');
         
         setCredits(creditsAdded);
         setTotalCredits(updatedCredits);
+        setProcessing(false);
         
-        toast.success(`Successfully added ${creditsAdded} credits to your account!`, {
-          duration: 5000,
-        });
+        if (verificationData.already_processed) {
+          toast.info('Credits were already added to your account for this payment.', {
+            duration: 5000,
+          });
+        } else {
+          toast.success(`Successfully added ${creditsAdded} credits to your account!`, {
+            duration: 5000,
+          });
+        }
         
         console.log(`Payment verified: ${creditsAdded} credits, total: ${updatedCredits}`);
       } catch (error) {
         console.error('Error verifying payment:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         
-        // Retry logic for webhook delays
-        if (retryCount < 3 && (errorMessage.includes('webhook') || errorMessage.includes('processing'))) {
+        // Retry logic for potential delays
+        if (retryCount < 3 && !errorMessage.includes('already processed')) {
           console.log(`Retrying payment verification (${retryCount + 1}/3)...`);
           setRetryCount(prev => prev + 1);
           setTimeout(() => {
@@ -81,26 +87,15 @@ const PaymentSuccess = () => {
         }
         
         setError(errorMessage);
+        setProcessing(false);
         toast.error(`Payment verification error: ${errorMessage}. Please contact support if your payment was processed.`, {
           duration: 8000,
         });
-      } finally {
-        if (retryCount >= 3 || error) {
-          setProcessing(false);
-        }
       }
     };
 
     verifyPayment();
   }, [user, sessionId, creditsParam, navigate, retryCount]);
-
-  // Handle case where user navigates here without session_id
-  useEffect(() => {
-    if (!sessionId && !processing) {
-      setError('Payment session not found');
-      setProcessing(false);
-    }
-  }, [sessionId, processing]);
 
   if (!user) {
     return null;

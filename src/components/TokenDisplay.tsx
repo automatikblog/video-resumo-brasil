@@ -12,7 +12,24 @@ const TokenDisplay = () => {
   useEffect(() => {
     if (user) {
       fetchUserTokens();
+      
+      // Set up interval to refresh tokens every 30 seconds
+      const interval = setInterval(fetchUserTokens, 30000);
+      
+      return () => clearInterval(interval);
     }
+  }, [user]);
+
+  // Listen for focus events to refresh credits when user returns to tab
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user) {
+        fetchUserTokens();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
 
   const fetchUserTokens = async () => {
