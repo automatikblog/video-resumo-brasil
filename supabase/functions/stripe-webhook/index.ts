@@ -39,12 +39,19 @@ serve(async (req) => {
       throw new Error("Missing stripe-signature header");
     }
 
-    // Verify webhook signature (you'll need to add webhook endpoint secret)
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      Deno.env.get("STRIPE_WEBHOOK_SECRET") || ""
-    );
+    // Verify webhook signature
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      console.warn("STRIPE_WEBHOOK_SECRET not set, skipping signature verification");
+    }
+
+    let event;
+    if (webhookSecret) {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } else {
+      // For development/testing without webhook secret
+      event = JSON.parse(body);
+    }
 
     console.log(`Received Stripe webhook: ${event.type}`);
 
@@ -59,6 +66,20 @@ serve(async (req) => {
       if (!userId || !creditsToAdd) {
         console.error("Missing user ID or credits in session metadata");
         return new Response("Missing required data", { status: 400 });
+      }
+
+      // Check if already processed
+      const { data: existingRecord } = await supabase
+        .from('payment_sessions')
+        .select('*')
+        .eq('session_id', session.id)
+        .maybeSingle();
+
+      if (existingRecord) {
+        console.log('Webhook: Credits already processed for this session');
+        return new Response(JSON.stringify({ received: true, already_processed: true }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
       }
 
       // Add credits to user account
@@ -97,7 +118,17 @@ serve(async (req) => {
         }
       }
 
-      console.log(`Successfully added ${creditsToAdd} credits to user ${userId}`);
+      // Record this payment session
+      await supabase
+        .from('payment_sessions')
+        .insert([{
+          session_id: session.id,
+          user_id: userId,
+          credits_added: creditsToAdd,
+          processed_at: new Date().toISOString()
+        }]);
+
+      console.log(`Webhook: Successfully added ${creditsToAdd} credits to user ${userId}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {

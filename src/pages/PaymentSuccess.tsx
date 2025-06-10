@@ -2,13 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { addCreditsToUser, getUserCredits } from '@/services/creditsService';
+import { getUserCredits } from '@/services/creditsService';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2, CreditCard, XCircle, AlertTriangle } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { supabase } from '@/integrations/supabase/client';
 
 const PaymentSuccess = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const PaymentSuccess = () => {
   const [credits, setCredits] = useState<number | null>(null);
   const [totalCredits, setTotalCredits] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const sessionId = searchParams.get('session_id');
   const creditsParam = searchParams.get('credits');
@@ -28,9 +30,9 @@ const PaymentSuccess = () => {
       return;
     }
 
-    const processPayment = async () => {
+    const verifyPayment = async () => {
       try {
-        console.log('Processing payment success...');
+        console.log('Verifying payment...');
         console.log('Session ID:', sessionId);
         console.log('Credits param:', creditsParam);
         
@@ -38,51 +40,64 @@ const PaymentSuccess = () => {
           throw new Error('Missing payment session information');
         }
 
-        if (!creditsParam) {
-          throw new Error('Missing credits information');
+        // Verify the payment session with Stripe
+        const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-payment', {
+          body: { session_id: sessionId }
+        });
+
+        if (verificationError) {
+          console.error('Payment verification error:', verificationError);
+          throw new Error(verificationError.message || 'Failed to verify payment');
         }
 
-        const creditsToAdd = parseInt(creditsParam);
-        
-        if (isNaN(creditsToAdd) || creditsToAdd <= 0) {
-          throw new Error('Invalid credits amount');
+        if (!verificationData.success) {
+          throw new Error(verificationData.error || 'Payment verification failed');
         }
 
-        console.log(`Processing payment: adding ${creditsToAdd} credits to user ${user.id}`);
-        
-        // Add credits to user account
-        await addCreditsToUser(user.id, creditsToAdd);
-        
-        // Get updated total credits
+        // Get updated credits from database
         const updatedCredits = await getUserCredits(user.id);
+        const creditsAdded = parseInt(creditsParam || '0');
         
-        setCredits(creditsToAdd);
+        setCredits(creditsAdded);
         setTotalCredits(updatedCredits);
         
-        toast.success(`Successfully added ${creditsToAdd} credits to your account!`, {
+        toast.success(`Successfully added ${creditsAdded} credits to your account!`, {
           duration: 5000,
         });
         
-        console.log(`Successfully processed payment: ${creditsToAdd} credits added, total: ${updatedCredits}`);
+        console.log(`Payment verified: ${creditsAdded} credits, total: ${updatedCredits}`);
       } catch (error) {
-        console.error('Error processing payment:', error);
+        console.error('Error verifying payment:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        
+        // Retry logic for webhook delays
+        if (retryCount < 3 && (errorMessage.includes('webhook') || errorMessage.includes('processing'))) {
+          console.log(`Retrying payment verification (${retryCount + 1}/3)...`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => {
+            verifyPayment();
+          }, 2000 * (retryCount + 1)); // Exponential backoff
+          return;
+        }
+        
         setError(errorMessage);
-        toast.error(`Payment processing error: ${errorMessage}. Please contact support if this persists.`, {
+        toast.error(`Payment verification error: ${errorMessage}. Please contact support if your payment was processed.`, {
           duration: 8000,
         });
       } finally {
-        setProcessing(false);
+        if (retryCount >= 3 || error) {
+          setProcessing(false);
+        }
       }
     };
 
-    processPayment();
-  }, [user, sessionId, creditsParam, navigate]);
+    verifyPayment();
+  }, [user, sessionId, creditsParam, navigate, retryCount]);
 
-  // Handle case where user navigates here without session_id (payment was cancelled)
+  // Handle case where user navigates here without session_id
   useEffect(() => {
     if (!sessionId && !processing) {
-      setError('Payment was cancelled or session expired');
+      setError('Payment session not found');
       setProcessing(false);
     }
   }, [sessionId, processing]);
@@ -103,12 +118,12 @@ const PaymentSuccess = () => {
                 <div className="flex justify-center mb-4">
                   <XCircle className="h-16 w-16 text-red-500" />
                 </div>
-                <CardTitle className="text-3xl font-bold text-red-600">Payment Failed</CardTitle>
+                <CardTitle className="text-3xl font-bold text-red-600">Payment Verification Issue</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <p className="text-lg font-medium text-red-700">
-                    There was an issue processing your payment
+                    There was an issue verifying your payment
                   </p>
                   <p className="text-muted-foreground">
                     {error}
@@ -116,18 +131,18 @@ const PaymentSuccess = () => {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button onClick={() => navigate('/dashboard?tab=credits')} variant="default">
-                    Try Again
+                  <Button onClick={() => window.location.reload()} variant="default">
+                    Retry Verification
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/')}>
-                    Back to Home
+                  <Button onClick={() => navigate('/dashboard?tab=credits')} variant="outline">
+                    Go to Dashboard
                   </Button>
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
                   <p className="flex items-center justify-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    If you were charged but didn't receive credits, please contact support.
+                    If you were charged but didn't receive credits, please contact support with session ID: {sessionId}
                   </p>
                 </div>
               </CardContent>
@@ -148,8 +163,15 @@ const PaymentSuccess = () => {
             <Card className="text-center py-8">
               <CardContent className="space-y-4">
                 <Loader2 className="h-12 w-12 mx-auto animate-spin text-brand-purple" />
-                <h2 className="text-2xl font-bold">Processing your payment...</h2>
-                <p className="text-muted-foreground">Please wait while we add credits to your account.</p>
+                <h2 className="text-2xl font-bold">Verifying your payment...</h2>
+                <p className="text-muted-foreground">
+                  Please wait while we confirm your payment and add credits to your account.
+                </p>
+                {retryCount > 0 && (
+                  <p className="text-sm text-yellow-600">
+                    Retry attempt {retryCount}/3 - This may take a few moments...
+                  </p>
+                )}
               </CardContent>
             </Card>
           ) : (
