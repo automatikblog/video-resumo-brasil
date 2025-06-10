@@ -20,17 +20,33 @@ const PaymentSuccess = () => {
   const [totalCredits, setTotalCredits] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   
   const sessionId = searchParams.get('session_id');
   const creditsParam = searchParams.get('credits');
 
+  const addDebugLog = (message: string) => {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log(logMessage);
+    setDebugLogs(prev => [...prev, logMessage]);
+  };
+
   useEffect(() => {
+    addDebugLog('=== PAYMENT SUCCESS PAGE LOADED ===');
+    addDebugLog(`User: ${user ? user.id : 'NULL'}`);
+    addDebugLog(`Session ID: ${sessionId || 'NULL'}`);
+    addDebugLog(`Credits Param: ${creditsParam || 'NULL'}`);
+    addDebugLog(`Current URL: ${window.location.href}`);
+    
     if (!user) {
+      addDebugLog('ERROR: No user found, redirecting to auth');
       navigate('/auth');
       return;
     }
 
     if (!sessionId) {
+      addDebugLog('ERROR: No session_id parameter found in URL');
       setError('Missing payment session information');
       setProcessing(false);
       return;
@@ -38,49 +54,65 @@ const PaymentSuccess = () => {
 
     const verifyPayment = async () => {
       try {
-        console.log('Starting payment verification for session:', sessionId);
+        addDebugLog(`=== STARTING PAYMENT VERIFICATION (Attempt ${retryCount + 1}) ===`);
+        addDebugLog(`Calling verify-payment function with session_id: ${sessionId}`);
         
         const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-payment', {
           body: { session_id: sessionId }
         });
 
-        console.log('Verification response:', verificationData, 'Error:', verificationError);
+        addDebugLog(`Function invoke completed`);
+        addDebugLog(`Verification data: ${JSON.stringify(verificationData)}`);
+        addDebugLog(`Verification error: ${JSON.stringify(verificationError)}`);
 
         if (verificationError) {
-          console.error('Payment verification error:', verificationError);
+          addDebugLog(`ERROR: Function invocation failed: ${verificationError.message}`);
           throw new Error(verificationError.message || 'Failed to verify payment');
         }
 
-        if (!verificationData || !verificationData.success) {
-          throw new Error(verificationData?.error || 'Payment verification failed');
+        if (!verificationData) {
+          addDebugLog('ERROR: No data returned from verify-payment function');
+          throw new Error('No response from payment verification');
         }
 
+        if (!verificationData.success) {
+          addDebugLog(`ERROR: Payment verification failed: ${verificationData.error}`);
+          throw new Error(verificationData.error || 'Payment verification failed');
+        }
+
+        addDebugLog('SUCCESS: Payment verification successful');
+        
         // Get updated credits from database
+        addDebugLog('Fetching updated credits from database...');
         const updatedCredits = await getUserCredits(user.id);
         const creditsAdded = verificationData.credits_added || parseInt(creditsParam || '0');
+        
+        addDebugLog(`Credits added: ${creditsAdded}`);
+        addDebugLog(`Total credits: ${updatedCredits}`);
         
         setCredits(creditsAdded);
         setTotalCredits(updatedCredits);
         setProcessing(false);
         
         if (verificationData.already_processed) {
+          addDebugLog('INFO: Credits were already processed for this payment');
           toast.info('Credits were already added to your account for this payment.', {
             duration: 5000,
           });
         } else {
+          addDebugLog('SUCCESS: New credits added successfully');
           toast.success(`Successfully added ${creditsAdded} credits to your account!`, {
             duration: 5000,
           });
         }
         
-        console.log(`Payment verified: ${creditsAdded} credits, total: ${updatedCredits}`);
       } catch (error) {
-        console.error('Error verifying payment:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        addDebugLog(`ERROR: Payment verification failed: ${errorMessage}`);
         
         // Retry logic for potential delays
         if (retryCount < 3 && !errorMessage.includes('already processed')) {
-          console.log(`Retrying payment verification (${retryCount + 1}/3)...`);
+          addDebugLog(`Will retry in ${2000 * (retryCount + 1)}ms (attempt ${retryCount + 2}/4)`);
           setRetryCount(prev => prev + 1);
           setTimeout(() => {
             verifyPayment();
@@ -88,6 +120,7 @@ const PaymentSuccess = () => {
           return;
         }
         
+        addDebugLog('ERROR: Max retries reached or permanent error, giving up');
         setError(errorMessage);
         setProcessing(false);
         toast.error(`Payment verification error: ${errorMessage}. Please contact support if your payment was processed.`, {
@@ -96,12 +129,38 @@ const PaymentSuccess = () => {
       }
     };
 
+    addDebugLog('Starting payment verification process...');
     verifyPayment();
   }, [user, sessionId, creditsParam, navigate, retryCount]);
 
   if (!user) {
     return null;
   }
+
+  // Debug panel (always visible for now)
+  const DebugPanel = () => (
+    <Card className="mt-4 bg-gray-50">
+      <CardHeader>
+        <CardTitle className="text-sm">Debug Information</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-xs space-y-1 max-h-40 overflow-y-auto">
+          {debugLogs.map((log, index) => (
+            <div key={index} className="font-mono text-gray-600">
+              {log}
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 pt-2 border-t text-xs text-gray-500">
+          <p>User ID: {user?.id}</p>
+          <p>Session ID: {sessionId}</p>
+          <p>Credits Param: {creditsParam}</p>
+          <p>Processing: {processing.toString()}</p>
+          <p>Error: {error || 'None'}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   // Error state
   if (error && !processing) {
@@ -144,6 +203,7 @@ const PaymentSuccess = () => {
                 </div>
               </CardContent>
             </Card>
+            <DebugPanel />
           </div>
         </main>
         <Footer />
@@ -206,6 +266,7 @@ const PaymentSuccess = () => {
               </CardContent>
             </Card>
           )}
+          <DebugPanel />
         </div>
       </main>
       <Footer />
