@@ -16,6 +16,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   console.log('[APP] App component loaded');
+  console.log('[APP] PaymentSuccess component:', PaymentSuccess);
   
   return (
     <QueryClientProvider client={queryClient}>

@@ -12,7 +12,8 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 
 const PaymentSuccess = () => {
-  console.log('[PAYMENT-SUCCESS] ===== COMPONENTE INICIANDO =====');
+  console.log('[PAYMENT-SUCCESS] ===== COMPONENTE CARREGADO =====');
+  console.log('[PAYMENT-SUCCESS] URL atual:', window.location.href);
   
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +24,6 @@ const PaymentSuccess = () => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [shouldRedirect, setShouldRedirect] = useState(false);
   
   const sessionId = searchParams.get('session_id');
   const creditsParam = searchParams.get('credits');
@@ -36,17 +36,13 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
-    console.log('[PAYMENT-SUCCESS] ===== USE EFFECT PRINCIPAL =====');
+    console.log('[PAYMENT-SUCCESS] ===== USE EFFECT EXECUTADO =====');
     addDebugLog('=== PAYMENT SUCCESS PAGE LOADED ===');
     addDebugLog(`Current URL: ${window.location.href}`);
-    addDebugLog(`URL Params: ${window.location.search}`);
     addDebugLog(`Auth loading: ${loading}`);
     addDebugLog(`User: ${user ? user.id : 'NULL'}`);
     addDebugLog(`Session ID: ${sessionId || 'NULL'}`);
     addDebugLog(`Credits Param: ${creditsParam || 'NULL'}`);
-    
-    // REMOVIDO O REDIRECIONAMENTO AUTOMÁTICO
-    // Vamos deixar a página carregar sempre e mostrar o estado
     
     if (!sessionId) {
       addDebugLog('WARNING: No session_id found in URL');
@@ -55,16 +51,13 @@ const PaymentSuccess = () => {
       return;
     }
 
-    if (!user && !loading) {
-      addDebugLog('WARNING: No user found and auth not loading');
-      setError('Usuário não encontrado - faça login para ver os resultados do pagamento');
-      setProcessing(false);
-      return;
-    }
-
     if (user) {
       addDebugLog('User found, starting payment verification...');
       verifyPayment();
+    } else if (!loading) {
+      addDebugLog('WARNING: No user found and auth not loading');
+      setError('Usuário não encontrado - faça login para ver os resultados do pagamento');
+      setProcessing(false);
     }
   }, [user, loading, sessionId, creditsParam, retryCount]);
 
@@ -86,14 +79,10 @@ const PaymentSuccess = () => {
         throw new Error(verificationError.message || 'Failed to verify payment');
       }
 
-      if (!verificationData) {
-        addDebugLog('ERROR: No data returned from verify-payment function');
-        throw new Error('No response from payment verification');
-      }
-
-      if (!verificationData.success) {
-        addDebugLog(`ERROR: Payment verification failed: ${verificationData.error}`);
-        throw new Error(verificationData.error || 'Payment verification failed');
+      if (!verificationData || !verificationData.success) {
+        const errorMsg = verificationData?.error || 'Payment verification failed';
+        addDebugLog(`ERROR: Payment verification failed: ${errorMsg}`);
+        throw new Error(errorMsg);
       }
 
       addDebugLog('SUCCESS: Payment verification successful');
@@ -132,7 +121,7 @@ const PaymentSuccess = () => {
         setRetryCount(prev => prev + 1);
         setTimeout(() => {
           verifyPayment();
-        }, 2000 * (retryCount + 1)); // Exponential backoff
+        }, 2000 * (retryCount + 1));
         return;
       }
       
@@ -145,67 +134,73 @@ const PaymentSuccess = () => {
     }
   };
 
-  // Debug panel (always visible)
-  const DebugPanel = () => (
-    <Card className="mt-4 bg-gray-50">
-      <CardHeader>
-        <CardTitle className="text-sm">Debug Information</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-xs space-y-1 max-h-60 overflow-y-auto">
-          {debugLogs.map((log, index) => (
-            <div key={index} className="font-mono text-gray-600">
-              {log}
-            </div>
-          ))}
-        </div>
-        <div className="mt-2 pt-2 border-t text-xs text-gray-500">
-          <p>User ID: {user?.id || 'Not logged in'}</p>
-          <p>Auth Loading: {loading.toString()}</p>
-          <p>Session ID: {sessionId || 'None'}</p>
-          <p>Credits Param: {creditsParam || 'None'}</p>
-          <p>Processing: {processing.toString()}</p>
-          <p>Error: {error || 'None'}</p>
-          <p>Retry Count: {retryCount}</p>
-          <p>Current URL: {window.location.href}</p>
-          <p>Should Redirect: {shouldRedirect.toString()}</p>
-        </div>
-        <div className="mt-2 pt-2 border-t">
-          <Button 
-            onClick={() => navigate('/dashboard')} 
-            className="w-full"
-          >
-            Go to Dashboard
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  console.log('[PAYMENT-SUCCESS] Rendering component');
 
-  console.log('[PAYMENT-SUCCESS] Rendering component, user:', user?.id, 'loading:', loading);
-
-  // Always render the page - no automatic redirects
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
+          {/* Debug Panel - Always visible */}
+          <Card className="mb-6 bg-blue-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-sm text-blue-800">🔍 DEBUG PANEL - Informações de Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div><strong>URL Atual:</strong> {window.location.href}</div>
+                  <div><strong>User ID:</strong> {user?.id || 'Não logado'}</div>
+                  <div><strong>Auth Loading:</strong> {loading.toString()}</div>
+                  <div><strong>Session ID:</strong> {sessionId || 'Nenhum'}</div>
+                  <div><strong>Credits Param:</strong> {creditsParam || 'Nenhum'}</div>
+                  <div><strong>Processing:</strong> {processing.toString()}</div>
+                  <div><strong>Error:</strong> {error || 'Nenhum'}</div>
+                  <div><strong>Retry Count:</strong> {retryCount}</div>
+                </div>
+                
+                <div className="mt-4">
+                  <strong>Logs de Debug:</strong>
+                  <div className="max-h-40 overflow-y-auto bg-white p-2 rounded border text-xs font-mono">
+                    {debugLogs.map((log, index) => (
+                      <div key={index} className="text-gray-600 mb-1">
+                        {log}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-4">
+                  <Button size="sm" onClick={() => window.location.reload()}>
+                    🔄 Recarregar Página
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/dashboard')}>
+                    📊 Ir para Dashboard
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Main Content */}
           {!user && !loading ? (
             <Card className="text-center py-8 border-yellow-200">
               <CardHeader>
                 <div className="flex justify-center mb-4">
                   <AlertTriangle className="h-16 w-16 text-yellow-500" />
                 </div>
-                <CardTitle className="text-3xl font-bold text-yellow-600">Login Required</CardTitle>
+                <CardTitle className="text-3xl font-bold text-yellow-600">Login Necessário</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <p className="text-lg">You need to be logged in to view payment results.</p>
-                <Button onClick={() => navigate('/auth')} className="mr-4">
-                  Go to Login
-                </Button>
-                <Button onClick={() => navigate('/dashboard')} variant="outline">
-                  Go to Dashboard
-                </Button>
+                <p className="text-lg">Você precisa estar logado para ver os resultados do pagamento.</p>
+                <div className="flex gap-4 justify-center">
+                  <Button onClick={() => navigate('/auth')}>
+                    Fazer Login
+                  </Button>
+                  <Button onClick={() => navigate('/dashboard')} variant="outline">
+                    Ir para Dashboard
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : error && !processing ? (
@@ -214,12 +209,12 @@ const PaymentSuccess = () => {
                 <div className="flex justify-center mb-4">
                   <XCircle className="h-16 w-16 text-red-500" />
                 </div>
-                <CardTitle className="text-3xl font-bold text-red-600">Payment Verification Problem</CardTitle>
+                <CardTitle className="text-3xl font-bold text-red-600">Problema na Verificação</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <p className="text-lg font-medium text-red-700">
-                    There was a problem verifying your payment
+                    Houve um problema ao verificar seu pagamento
                   </p>
                   <p className="text-muted-foreground">
                     {error}
@@ -228,17 +223,17 @@ const PaymentSuccess = () => {
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button onClick={() => window.location.reload()} variant="default">
-                    Try Verification Again
+                    Tentar Novamente
                   </Button>
                   <Button onClick={() => navigate('/dashboard?tab=credits')} variant="outline">
-                    Go to Dashboard
+                    Ir para Dashboard
                   </Button>
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
                   <p className="flex items-center justify-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    If you were charged but didn't receive credits, contact support with session ID: {sessionId}
+                    Se você foi cobrado mas não recebeu créditos, entre em contato com o suporte com o Session ID: {sessionId}
                   </p>
                 </div>
               </CardContent>
@@ -247,13 +242,13 @@ const PaymentSuccess = () => {
             <Card className="text-center py-8">
               <CardContent className="space-y-4">
                 <Loader2 className="h-12 w-12 mx-auto animate-spin text-brand-purple" />
-                <h2 className="text-2xl font-bold">Verifying your payment...</h2>
+                <h2 className="text-2xl font-bold">Verificando seu pagamento...</h2>
                 <p className="text-muted-foreground">
-                  Please wait while we confirm your payment and add credits to your account.
+                  Aguarde enquanto confirmamos seu pagamento e adicionamos créditos à sua conta.
                 </p>
                 {retryCount > 0 && (
                   <p className="text-sm text-yellow-600">
-                    Attempt {retryCount}/3 - This may take a few moments...
+                    Tentativa {retryCount}/3 - Isso pode levar alguns momentos...
                   </p>
                 )}
               </CardContent>
@@ -264,37 +259,35 @@ const PaymentSuccess = () => {
                 <div className="flex justify-center mb-4">
                   <CheckCircle className="h-16 w-16 text-green-500" />
                 </div>
-                <CardTitle className="text-3xl font-bold text-green-600">Payment Successful!</CardTitle>
+                <CardTitle className="text-3xl font-bold text-green-600">Pagamento Realizado com Sucesso!</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <p className="text-lg">
-                    <strong>{credits}</strong> credits have been added to your account.
+                    <strong>{credits}</strong> créditos foram adicionados à sua conta.
                   </p>
                   <p className="text-muted-foreground">
-                    Your total balance is now <strong>{totalCredits}</strong> credits.
+                    Seu saldo total agora é de <strong>{totalCredits}</strong> créditos.
                   </p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
-                    Go to Dashboard
+                    Ir para Dashboard
                   </Button>
                   <Button variant="outline" onClick={() => navigate('/')}>
-                    Back to Home
+                    Voltar ao Início
                   </Button>
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
-                  <p>You can now create video summaries using your credits.</p>
-                  <p>Each video summary costs 1 credit.</p>
+                  <p>Agora você pode criar resumos de vídeo usando seus créditos.</p>
+                  <p>Cada resumo de vídeo custa 1 crédito.</p>
                 </div>
               </CardContent>
             </Card>
           )}
-          
-          <DebugPanel />
         </div>
       </main>
       <Footer />
