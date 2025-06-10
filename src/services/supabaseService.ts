@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { VideoSummary } from "@/types/videoSummary";
 import { deductCreditsFromUser } from "@/services/creditsService";

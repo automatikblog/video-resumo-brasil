@@ -380,23 +380,42 @@ Transcript: "${truncatedTranscript}"`
 }
 
 // Process a single video
-async function processSingleVideo(id: string, videoId: string): Promise<{transcript: string, summary: string}> {
-  // 1. Get video details from YouTube API
-  const videoDetails = await fetchYouTubeVideoDetails(videoId);
-  
-  const videoTitle = videoDetails.snippet.title;
-  const videoDescription = videoDetails.snippet.description;
-  const duration = videoDetails.contentDetails.duration;
-  
-  console.log(`Processing video: "${videoTitle}" with duration ${duration}`);
-  
-  // 2. Get transcript from Supadata API
-  const transcript = await fetchTranscriptFromSupadata(videoId);
-  
-  // 3. Generate a summary using Gemini
-  const summary = await generateSummaryWithGemini(videoTitle, videoDescription, transcript);
-  
-  return { transcript, summary };
+async function processSingleVideo(id: string, videoId: string, userId?: string): Promise<{transcript: string, summary: string}> {
+  // Deduct 1 credit for single video processing if user is authenticated
+  if (userId) {
+    console.log(`Deducting 1 credit for single video processing from user: ${userId}`);
+    const hasCredits = await deductUserCredits(userId, 1);
+    if (!hasCredits) {
+      throw new Error('Insufficient credits to process video');
+    }
+  }
+
+  try {
+    // 1. Get video details from YouTube API
+    const videoDetails = await fetchYouTubeVideoDetails(videoId);
+    
+    const videoTitle = videoDetails.snippet.title;
+    const videoDescription = videoDetails.snippet.description;
+    const duration = videoDetails.contentDetails.duration;
+    
+    console.log(`Processing video: "${videoTitle}" with duration ${duration}`);
+    
+    // 2. Get transcript from Supadata API
+    const transcript = await fetchTranscriptFromSupadata(videoId);
+    
+    // 3. Generate a summary using Gemini
+    const summary = await generateSummaryWithGemini(videoTitle, videoDescription, transcript);
+    
+    console.log(`Successfully processed single video: ${videoTitle}`);
+    return { transcript, summary };
+  } catch (error) {
+    // Refund credit if processing failed and user is authenticated
+    if (userId) {
+      console.log(`Refunding 1 credit due to processing failure for user: ${userId}`);
+      await refundUserCredits(userId, 1);
+    }
+    throw error;
+  }
 }
 
 // Process a playlist
@@ -635,7 +654,7 @@ serve(async (req) => {
       // Get the first video ID for reference (if available in URL)
       videoId = extractYouTubeId(youtube_url) || null;
     } else {
-      // Process as single video (including Shorts) - 1 credit already deducted in saveYouTubeUrl
+      // Process as single video (including Shorts)
       videoId = extractYouTubeId(youtube_url);
       
       if (!videoId) {
@@ -645,18 +664,10 @@ serve(async (req) => {
       const videoType = isShorts(youtube_url) ? 'Shorts' : 'regular';
       console.log(`Processing ${videoType} video with ID: ${videoId}`);
       
-      try {
-        const result = await processSingleVideo(id, videoId);
-        transcript = result.transcript;
-        summary = result.summary;
-        creditsUsed = 1; // Single video costs 1 credit
-      } catch (error) {
-        // Refund credit for failed single video if user is authenticated
-        if (userId) {
-          await refundUserCredits(userId, 1);
-        }
-        throw error;
-      }
+      const result = await processSingleVideo(id, videoId, userId);
+      transcript = result.transcript;
+      summary = result.summary;
+      creditsUsed = 1; // Single video costs 1 credit
     }
     
     // 4. Update the database with the transcript and summary
