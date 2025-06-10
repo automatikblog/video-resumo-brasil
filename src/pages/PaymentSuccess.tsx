@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserCredits } from '@/services/creditsService';
@@ -22,8 +22,10 @@ const PaymentSuccess = () => {
   const [credits, setCredits] = useState<number | null>(null);
   const [totalCredits, setTotalCredits] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  
+  // Use ref to prevent multiple executions
+  const hasVerified = useRef(false);
   
   const sessionId = searchParams.get('session_id');
   const creditsParam = searchParams.get('credits');
@@ -43,6 +45,7 @@ const PaymentSuccess = () => {
     addDebugLog(`User: ${user ? user.id : 'NULL'}`);
     addDebugLog(`Session ID: ${sessionId || 'NULL'}`);
     addDebugLog(`Credits Param: ${creditsParam || 'NULL'}`);
+    addDebugLog(`Has already verified: ${hasVerified.current}`);
     
     if (!sessionId) {
       addDebugLog('WARNING: No session_id found in URL');
@@ -51,19 +54,26 @@ const PaymentSuccess = () => {
       return;
     }
 
-    if (user) {
+    // Prevent multiple executions
+    if (hasVerified.current) {
+      addDebugLog('SKIP: Payment already verified, skipping duplicate verification');
+      return;
+    }
+
+    if (user && !loading) {
       addDebugLog('User found, starting payment verification...');
+      hasVerified.current = true; // Mark as verified before starting
       verifyPayment();
     } else if (!loading) {
       addDebugLog('WARNING: No user found and auth not loading');
       setError('Usuário não encontrado - faça login para ver os resultados do pagamento');
       setProcessing(false);
     }
-  }, [user, loading, sessionId, creditsParam, retryCount]);
+  }, [user, loading, sessionId, creditsParam]); // Removed retryCount from dependencies
 
   const verifyPayment = async () => {
     try {
-      addDebugLog(`=== STARTING PAYMENT VERIFICATION (Attempt ${retryCount + 1}) ===`);
+      addDebugLog('=== STARTING PAYMENT VERIFICATION ===');
       addDebugLog(`Calling verify-payment with session_id: ${sessionId}`);
       
       const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-payment', {
@@ -115,17 +125,6 @@ const PaymentSuccess = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       addDebugLog(`ERROR: Payment verification failed: ${errorMessage}`);
       
-      // Retry logic for potential delays
-      if (retryCount < 3 && !errorMessage.includes('already processed')) {
-        addDebugLog(`Retrying in ${2000 * (retryCount + 1)}ms (attempt ${retryCount + 2}/4)`);
-        setRetryCount(prev => prev + 1);
-        setTimeout(() => {
-          verifyPayment();
-        }, 2000 * (retryCount + 1));
-        return;
-      }
-      
-      addDebugLog('ERROR: Max retries reached or permanent error');
       setError(errorMessage);
       setProcessing(false);
       toast.error(`Payment verification error: ${errorMessage}. Contact support if your payment was processed.`, {
@@ -156,7 +155,7 @@ const PaymentSuccess = () => {
                   <div><strong>Credits Param:</strong> {creditsParam || 'Nenhum'}</div>
                   <div><strong>Processing:</strong> {processing.toString()}</div>
                   <div><strong>Error:</strong> {error || 'Nenhum'}</div>
-                  <div><strong>Retry Count:</strong> {retryCount}</div>
+                  <div><strong>Has Verified:</strong> {hasVerified.current.toString()}</div>
                 </div>
                 
                 <div className="mt-4">
@@ -246,11 +245,6 @@ const PaymentSuccess = () => {
                 <p className="text-muted-foreground">
                   Aguarde enquanto confirmamos seu pagamento e adicionamos créditos à sua conta.
                 </p>
-                {retryCount > 0 && (
-                  <p className="text-sm text-yellow-600">
-                    Tentativa {retryCount}/3 - Isso pode levar alguns momentos...
-                  </p>
-                )}
               </CardContent>
             </Card>
           ) : (
