@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, Zap, Star, Loader2 } from 'lucide-react';
+import { Coins, Zap, Star, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -66,7 +66,7 @@ const CreditsSection = () => {
 
       if (error) {
         console.error('Checkout error:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to create checkout session');
       }
 
       if (data?.url) {
@@ -74,11 +74,19 @@ const CreditsSection = () => {
         // Open Stripe checkout in the same tab
         window.location.href = data.url;
       } else {
-        throw new Error('No checkout URL received');
+        throw new Error('No checkout URL received from server');
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
-      toast.error('Failed to create checkout session. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      toast.error(`Failed to start checkout: ${errorMessage}`, {
+        duration: 5000,
+        action: {
+          label: "Try Again",
+          onClick: () => handlePurchase(packageName, credits, price),
+        },
+      });
     } finally {
       setLoading(null);
     }
@@ -153,6 +161,10 @@ const CreditsSection = () => {
 
       <div className="text-center text-sm text-muted-foreground">
         <p>Credits never expire and can be used anytime. Secure payment powered by Stripe.</p>
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <AlertCircle className="h-4 w-4" />
+          <span>If you experience any payment issues, please contact support.</span>
+        </div>
       </div>
     </div>
   );
