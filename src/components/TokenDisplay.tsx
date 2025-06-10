@@ -10,19 +10,27 @@ const TokenDisplay = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[TOKEN-DISPLAY] Component mounted, user:', user?.id);
     if (user) {
       fetchUserTokens();
       
       // Set up interval to refresh tokens every 30 seconds
-      const interval = setInterval(fetchUserTokens, 30000);
+      const interval = setInterval(() => {
+        console.log('[TOKEN-DISPLAY] Auto-refreshing tokens');
+        fetchUserTokens();
+      }, 30000);
       
-      return () => clearInterval(interval);
+      return () => {
+        console.log('[TOKEN-DISPLAY] Clearing interval');
+        clearInterval(interval);
+      };
     }
   }, [user]);
 
   // Listen for focus events to refresh credits when user returns to tab
   useEffect(() => {
     const handleFocus = () => {
+      console.log('[TOKEN-DISPLAY] Window focus detected, refreshing tokens');
       if (user) {
         fetchUserTokens();
       }
@@ -33,20 +41,42 @@ const TokenDisplay = () => {
   }, [user]);
 
   const fetchUserTokens = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('[TOKEN-DISPLAY] No user, skipping token fetch');
+      return;
+    }
+    
+    console.log('[TOKEN-DISPLAY] Fetching tokens for user:', user.id);
     
     try {
       const credits = await getUserCredits(user.id);
+      console.log('[TOKEN-DISPLAY] Retrieved credits:', credits);
+      console.log('[TOKEN-DISPLAY] Previous tokens:', tokens, 'New tokens:', credits);
+      
+      if (credits !== tokens) {
+        console.log('[TOKEN-DISPLAY] Token count changed from', tokens, 'to', credits);
+      }
+      
       setTokens(credits);
     } catch (error) {
-      console.error('Error fetching tokens:', error);
+      console.error('[TOKEN-DISPLAY] Error fetching tokens:', error);
       setTokens(0);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user || loading) return null;
+  if (!user) {
+    console.log('[TOKEN-DISPLAY] Not rendering - no user');
+    return null;
+  }
+
+  if (loading) {
+    console.log('[TOKEN-DISPLAY] Still loading...');
+    return null;
+  }
+
+  console.log('[TOKEN-DISPLAY] Rendering with tokens:', tokens);
 
   return (
     <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-brand-purple/10 to-brand-blue/10 rounded-full border border-brand-purple/20">
