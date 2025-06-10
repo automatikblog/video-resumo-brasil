@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0';
@@ -36,6 +35,93 @@ interface ProcessVideoRequest {
 
 // Helper function to introduce a delay
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper function to deduct user credits
+const deductUserCredits = async (userId: string, creditsToDeduct: number): Promise<boolean> => {
+  console.log(`Deducting ${creditsToDeduct} credits from user: ${userId}`);
+  
+  try {
+    // Get current credits
+    const { data: creditsData, error: creditsError } = await supabase
+      .from('user_credits')
+      .select('credits')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (creditsError) {
+      console.error('Error fetching user credits:', creditsError);
+      return false;
+    }
+
+    const currentCredits = creditsData?.credits || 0;
+    
+    if (currentCredits < creditsToDeduct) {
+      console.log(`Insufficient credits: ${currentCredits} available, ${creditsToDeduct} needed`);
+      return false;
+    }
+
+    const newCredits = currentCredits - creditsToDeduct;
+    
+    // Update credits
+    const { error: updateError } = await supabase
+      .from('user_credits')
+      .update({ 
+        credits: newCredits,
+        updated_at: new Date().toISOString() 
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating user credits:', updateError);
+      return false;
+    }
+
+    console.log(`Successfully deducted ${creditsToDeduct} credits. New balance: ${newCredits}`);
+    return true;
+  } catch (error) {
+    console.error('Error in deductUserCredits:', error);
+    return false;
+  }
+};
+
+// Helper function to refund user credits
+const refundUserCredits = async (userId: string, creditsToRefund: number): Promise<void> => {
+  console.log(`Refunding ${creditsToRefund} credits to user: ${userId}`);
+  
+  try {
+    // Get current credits
+    const { data: creditsData, error: creditsError } = await supabase
+      .from('user_credits')
+      .select('credits')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (creditsError) {
+      console.error('Error fetching user credits for refund:', creditsError);
+      return;
+    }
+
+    const currentCredits = creditsData?.credits || 0;
+    const newCredits = currentCredits + creditsToRefund;
+    
+    // Update credits
+    const { error: updateError } = await supabase
+      .from('user_credits')
+      .update({ 
+        credits: newCredits,
+        updated_at: new Date().toISOString() 
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error refunding user credits:', updateError);
+    } else {
+      console.log(`Successfully refunded ${creditsToRefund} credits. New balance: ${newCredits}`);
+    }
+  } catch (error) {
+    console.error('Error in refundUserCredits:', error);
+  }
+};
 
 // Extract YouTube video ID from URL (including Shorts)
 function extractYouTubeId(url: string): string | null {
@@ -314,7 +400,7 @@ async function processSingleVideo(id: string, videoId: string): Promise<{transcr
 }
 
 // Process a playlist
-async function processPlaylist(id: string, playlistId: string, url: string): Promise<{transcript: string, summary: string}> {
+async function processPlaylist(id: string, playlistId: string, url: string, userId?: string): Promise<{transcript: string, summary: string, creditsUsed: number}> {
   try {
     console.log(`Starting playlist processing for ID: ${playlistId}`);
     
@@ -328,11 +414,22 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
     const videoDetails = [];
     let processedCount = 0;
     let successCount = 0;
+    let creditsUsed = 0;
     
     for (let i = 0; i < videoIds.length; i++) {
       const videoId = videoIds[i];
       try {
         console.log(`Processing video ${i + 1}/${videoIds.length}: ${videoId}`);
+        
+        // Deduct credits for each video if user is authenticated
+        if (userId) {
+          const hasCredits = await deductUserCredits(userId, 1);
+          if (!hasCredits) {
+            console.log(`User ${userId} has insufficient credits for video ${i + 1}, stopping playlist processing`);
+            break;
+          }
+          creditsUsed += 1;
+        }
         
         // Add a delay before each API call to respect rate limits (including the first one)
         if (i >= 0) {
@@ -363,6 +460,12 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
       } catch (error) {
         console.error(`Error processing video ${videoId}:`, error);
         
+        // Refund credit for failed video if user is authenticated
+        if (userId && creditsUsed > 0) {
+          await refundUserCredits(userId, 1);
+          creditsUsed -= 1;
+        }
+        
         // Add error information to transcript with clear formatting
         combinedTranscript += `\n\n${'='.repeat(80)}\n`;
         combinedTranscript += `VIDEO ${i + 1}: ERROR PROCESSING (ID: ${videoId})\n`;
@@ -374,7 +477,7 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
       
       // Update database with progress every few videos
       if (processedCount % 3 === 0 || processedCount === videoIds.length) {
-        console.log(`Updating progress: ${processedCount}/${videoIds.length} videos processed (${successCount} successful)`);
+        console.log(`Updating progress: ${processedCount}/${videoIds.length} videos processed (${successCount} successful, ${creditsUsed} credits used)`);
         await supabase
           .from('video_summaries')
           .update({ 
@@ -386,7 +489,7 @@ async function processPlaylist(id: string, playlistId: string, url: string): Pro
       }
     }
     
-    console.log(`Playlist processing complete: ${successCount}/${videoIds.length} videos processed successfully`);
+    console.log(`Playlist processing complete: ${successCount}/${videoIds.length} videos processed successfully, ${creditsUsed} credits used`);
     
     // 3. Generate a summary of the entire playlist with Gemini
     const playlistInfo = videoDetails.map((v, i) => 
@@ -439,7 +542,7 @@ Combined Transcript (partial): "${combinedTranscript.substring(0, 8000)}..."`
     const summary = summaryData.candidates[0].content.parts[0].text;
     console.log('Playlist summary generated successfully');
     
-    return { transcript: combinedTranscript, summary };
+    return { transcript: combinedTranscript, summary, creditsUsed };
     
   } catch (error) {
     console.error('Error in processPlaylist:', error);
@@ -454,6 +557,7 @@ serve(async (req) => {
   }
 
   let requestData: ProcessVideoRequest;
+  let userId: string | null = null;
   
   try {
     // Parse the request body
@@ -473,6 +577,20 @@ serve(async (req) => {
         JSON.stringify({ error: 'Missing required fields: id and youtube_url are required' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Get user ID from the video summary record
+    const { data: summaryData, error: summaryError } = await supabase
+      .from('video_summaries')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (summaryError) {
+      console.error('Error fetching video summary:', summaryError);
+    } else {
+      userId = summaryData?.user_id || null;
+      console.log('Found user ID:', userId);
     }
 
     // Update status to processing
@@ -497,6 +615,7 @@ serve(async (req) => {
     let playlistId: string | null = null;
     let transcript: string = '';
     let summary: string = '';
+    let creditsUsed = 0;
     
     // Check if it's a playlist or single video
     if (isPlaylist(youtube_url)) {
@@ -508,14 +627,15 @@ serve(async (req) => {
       }
       
       console.log(`Processing playlist with ID: ${playlistId}`);
-      const result = await processPlaylist(id, playlistId, youtube_url);
+      const result = await processPlaylist(id, playlistId, youtube_url, userId);
       transcript = result.transcript;
       summary = result.summary;
+      creditsUsed = result.creditsUsed;
       
       // Get the first video ID for reference (if available in URL)
       videoId = extractYouTubeId(youtube_url) || null;
     } else {
-      // Process as single video (including Shorts)
+      // Process as single video (including Shorts) - 1 credit already deducted in saveYouTubeUrl
       videoId = extractYouTubeId(youtube_url);
       
       if (!videoId) {
@@ -524,9 +644,19 @@ serve(async (req) => {
       
       const videoType = isShorts(youtube_url) ? 'Shorts' : 'regular';
       console.log(`Processing ${videoType} video with ID: ${videoId}`);
-      const result = await processSingleVideo(id, videoId);
-      transcript = result.transcript;
-      summary = result.summary;
+      
+      try {
+        const result = await processSingleVideo(id, videoId);
+        transcript = result.transcript;
+        summary = result.summary;
+        creditsUsed = 1; // Single video costs 1 credit
+      } catch (error) {
+        // Refund credit for failed single video if user is authenticated
+        if (userId) {
+          await refundUserCredits(userId, 1);
+        }
+        throw error;
+      }
     }
     
     // 4. Update the database with the transcript and summary
@@ -554,7 +684,8 @@ serve(async (req) => {
         success: true, 
         message: 'Video processed successfully',
         videoId,
-        videoType: isPlaylist(youtube_url) ? 'playlist' : isShorts(youtube_url) ? 'shorts' : 'video'
+        videoType: isPlaylist(youtube_url) ? 'playlist' : isShorts(youtube_url) ? 'shorts' : 'video',
+        creditsUsed
       }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

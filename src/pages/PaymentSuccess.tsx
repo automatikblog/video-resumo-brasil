@@ -12,9 +12,6 @@ import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 
 const PaymentSuccess = () => {
-  console.log('[PAYMENT-SUCCESS] ===== COMPONENTE CARREGADO =====');
-  console.log('[PAYMENT-SUCCESS] URL atual:', window.location.href);
-  
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -22,7 +19,6 @@ const PaymentSuccess = () => {
   const [credits, setCredits] = useState<number | null>(null);
   const [totalCredits, setTotalCredits] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   
   // Use ref to prevent multiple executions
   const hasVerified = useRef(false);
@@ -30,25 +26,10 @@ const PaymentSuccess = () => {
   const sessionId = searchParams.get('session_id');
   const creditsParam = searchParams.get('credits');
 
-  const addDebugLog = (message: string) => {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] ${message}`;
-    console.log(logMessage);
-    setDebugLogs(prev => [...prev, logMessage]);
-  };
-
   useEffect(() => {
-    console.log('[PAYMENT-SUCCESS] ===== USE EFFECT EXECUTADO =====');
-    addDebugLog('=== PAYMENT SUCCESS PAGE LOADED ===');
-    addDebugLog(`Current URL: ${window.location.href}`);
-    addDebugLog(`Auth loading: ${loading}`);
-    addDebugLog(`User: ${user ? user.id : 'NULL'}`);
-    addDebugLog(`Session ID: ${sessionId || 'NULL'}`);
-    addDebugLog(`Credits Param: ${creditsParam || 'NULL'}`);
-    addDebugLog(`Has already verified: ${hasVerified.current}`);
+    console.log('[PAYMENT-SUCCESS] Page loaded, session_id:', sessionId);
     
     if (!sessionId) {
-      addDebugLog('WARNING: No session_id found in URL');
       setError('Nenhum session_id encontrado na URL');
       setProcessing(false);
       return;
@@ -56,66 +37,48 @@ const PaymentSuccess = () => {
 
     // Prevent multiple executions
     if (hasVerified.current) {
-      addDebugLog('SKIP: Payment already verified, skipping duplicate verification');
       return;
     }
 
     if (user && !loading) {
-      addDebugLog('User found, starting payment verification...');
-      hasVerified.current = true; // Mark as verified before starting
+      hasVerified.current = true;
       verifyPayment();
     } else if (!loading) {
-      addDebugLog('WARNING: No user found and auth not loading');
       setError('Usuário não encontrado - faça login para ver os resultados do pagamento');
       setProcessing(false);
     }
-  }, [user, loading, sessionId, creditsParam]); // Removed retryCount from dependencies
+  }, [user, loading, sessionId, creditsParam]);
 
   const verifyPayment = async () => {
     try {
-      addDebugLog('=== STARTING PAYMENT VERIFICATION ===');
-      addDebugLog(`Calling verify-payment with session_id: ${sessionId}`);
+      console.log('[PAYMENT-SUCCESS] Starting payment verification');
       
       const { data: verificationData, error: verificationError } = await supabase.functions.invoke('verify-payment', {
         body: { session_id: sessionId }
       });
 
-      addDebugLog(`Function invocation completed`);
-      addDebugLog(`Verification data: ${JSON.stringify(verificationData)}`);
-      addDebugLog(`Verification error: ${JSON.stringify(verificationError)}`);
-
       if (verificationError) {
-        addDebugLog(`ERROR: Function invocation failed: ${verificationError.message}`);
         throw new Error(verificationError.message || 'Failed to verify payment');
       }
 
       if (!verificationData || !verificationData.success) {
         const errorMsg = verificationData?.error || 'Payment verification failed';
-        addDebugLog(`ERROR: Payment verification failed: ${errorMsg}`);
         throw new Error(errorMsg);
       }
 
-      addDebugLog('SUCCESS: Payment verification successful');
-      
       // Get updated credits from database
-      addDebugLog('Fetching updated credits from database...');
       const updatedCredits = await getUserCredits(user.id);
       const creditsAdded = verificationData.credits_added || parseInt(creditsParam || '0');
-      
-      addDebugLog(`Credits added: ${creditsAdded}`);
-      addDebugLog(`Total credits: ${updatedCredits}`);
       
       setCredits(creditsAdded);
       setTotalCredits(updatedCredits);
       setProcessing(false);
       
       if (verificationData.already_processed) {
-        addDebugLog('INFO: Credits already processed for this payment');
         toast.info('Credits already added to your account for this payment.', {
           duration: 5000,
         });
       } else {
-        addDebugLog('SUCCESS: New credits added successfully');
         toast.success(`${creditsAdded} credits added successfully to your account!`, {
           duration: 5000,
         });
@@ -123,8 +86,6 @@ const PaymentSuccess = () => {
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      addDebugLog(`ERROR: Payment verification failed: ${errorMessage}`);
-      
       setError(errorMessage);
       setProcessing(false);
       toast.error(`Payment verification error: ${errorMessage}. Contact support if your payment was processed.`, {
@@ -133,55 +94,11 @@ const PaymentSuccess = () => {
     }
   };
 
-  console.log('[PAYMENT-SUCCESS] Rendering component');
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          {/* Debug Panel - Always visible */}
-          <Card className="mb-6 bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-sm text-blue-800">🔍 DEBUG PANEL - Informações de Pagamento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xs space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div><strong>URL Atual:</strong> {window.location.href}</div>
-                  <div><strong>User ID:</strong> {user?.id || 'Não logado'}</div>
-                  <div><strong>Auth Loading:</strong> {loading.toString()}</div>
-                  <div><strong>Session ID:</strong> {sessionId || 'Nenhum'}</div>
-                  <div><strong>Credits Param:</strong> {creditsParam || 'Nenhum'}</div>
-                  <div><strong>Processing:</strong> {processing.toString()}</div>
-                  <div><strong>Error:</strong> {error || 'Nenhum'}</div>
-                  <div><strong>Has Verified:</strong> {hasVerified.current.toString()}</div>
-                </div>
-                
-                <div className="mt-4">
-                  <strong>Logs de Debug:</strong>
-                  <div className="max-h-40 overflow-y-auto bg-white p-2 rounded border text-xs font-mono">
-                    {debugLogs.map((log, index) => (
-                      <div key={index} className="text-gray-600 mb-1">
-                        {log}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 mt-4">
-                  <Button size="sm" onClick={() => window.location.reload()}>
-                    🔄 Recarregar Página
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/dashboard')}>
-                    📊 Ir para Dashboard
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Main Content */}
           {!user && !loading ? (
             <Card className="text-center py-8 border-yellow-200">
               <CardHeader>
