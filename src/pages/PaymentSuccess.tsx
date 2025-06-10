@@ -30,6 +30,10 @@ const PaymentSuccess = () => {
 
     const processPayment = async () => {
       try {
+        console.log('Processing payment success...');
+        console.log('Session ID:', sessionId);
+        console.log('Credits param:', creditsParam);
+        
         if (!sessionId) {
           throw new Error('Missing payment session information');
         }

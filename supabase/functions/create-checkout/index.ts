@@ -72,6 +72,9 @@ serve(async (req) => {
       console.log("Creating new customer");
     }
     
+    // Get the origin for redirect URLs
+    const origin = req.headers.get("origin") || "https://video-resumo-brasil.lovable.app";
+    
     // Create a Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -90,8 +93,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}&credits=${credits}`,
-      cancel_url: `${req.headers.get("origin")}/dashboard?tab=credits`,
+      success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&credits=${credits}`,
+      cancel_url: `${origin}/dashboard?tab=credits&cancelled=true`,
       client_reference_id: userData.id,
       metadata: {
         credits: credits.toString(),
@@ -101,6 +104,7 @@ serve(async (req) => {
     });
     
     console.log(`Checkout session created: ${session.id}`);
+    console.log(`Success URL: ${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&credits=${credits}`);
     
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
