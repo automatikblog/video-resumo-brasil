@@ -17,13 +17,16 @@ const UsageLimitNotice = ({ isAuthenticated, canUse }: UsageLimitNoticeProps) =>
 
   return (
     <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
-      <p className="mb-2">{getLangString('usageLimitReachedDetail', currentLang)}</p>
+      <p className="mb-2">
+        {getLangString('usageLimitReachedDetail', currentLang) || 
+         'You have reached your free trial limit of 1 video transcription. Sign up to get more credits and access to playlists!'}
+      </p>
       <Button 
         variant="outline" 
         onClick={() => navigate('/auth')}
         className="bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200"
       >
-        {getLangString('signUpForMore', currentLang)}
+        {getLangString('signUpForMore', currentLang) || 'Sign Up for More Credits'}
       </Button>
     </div>
   );

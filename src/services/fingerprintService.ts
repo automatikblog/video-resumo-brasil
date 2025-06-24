@@ -60,7 +60,21 @@ export const trackAnonymousUser = async (fingerprint: string): Promise<number> =
 };
 
 // Check if anonymous user has reached the usage limit
-export const checkAnonymousUserLimit = async (fingerprint: string, limit: number = 3): Promise<boolean> => {
-  const usageCount = await trackAnonymousUser(fingerprint);
-  return usageCount <= limit;
+export const checkAnonymousUserLimit = async (fingerprint: string, limit: number = 1): Promise<boolean> => {
+  // Get current usage without incrementing
+  const { data: existingUser } = await supabase
+    .from('users_anonymous')
+    .select('usage_count')
+    .eq('fingerprint', fingerprint)
+    .maybeSingle();
+
+  const currentUsage = existingUser?.usage_count || 0;
+  console.log(`Anonymous user usage check: ${currentUsage}/${limit}`);
+  
+  return currentUsage < limit;
+};
+
+// Increment usage count for anonymous user
+export const incrementAnonymousUsage = async (fingerprint: string): Promise<void> => {
+  await trackAnonymousUser(fingerprint);
 };

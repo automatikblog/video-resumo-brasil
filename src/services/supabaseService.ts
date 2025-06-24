@@ -13,13 +13,14 @@ export const saveYouTubeUrl = async (
 ): Promise<VideoSummary> => {
   console.log('Saving YouTube URL:', { url, userId, fingerprint, isPlaylist });
   
-  // Check if user has enough credits (only for authenticated users)
-  if (userId) {
+  // Only deduct credits for authenticated users and only for playlists (upfront)
+  // Single videos will be charged in the edge function after successful processing
+  if (userId && isPlaylist) {
     const hasCredits = await deductCreditsFromUser(userId, 1);
     if (!hasCredits) {
       throw new Error('Insufficient credits. Please purchase more credits to continue.');
     }
-    console.log('Credits deducted successfully for initial video processing');
+    console.log('Credits deducted successfully for playlist processing');
   }
   
   // Define the insert data as a more flexible type that can accept our conditionally added fields

@@ -2,22 +2,25 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { saveYouTubeUrl, pollForVideoSummary } from '@/services/supabaseService';
-import { getFingerprint, checkAnonymousUserLimit } from '@/services/fingerprintService';
+import { saveYouTubeUrl, pollForVideoSummary, getVideoSummary } from '@/services/supabaseService';
+import { getFingerprint, checkAnonymousUserLimit, incrementAnonymousUsage } from '@/services/fingerprintService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getCurrentLang, getLangString } from '@/services/languageService';
-import { isPlaylistUrl } from '@/utils/youtubeUtils';
+import { isPlaylistUrl, isShortsUrl } from '@/utils/youtubeUtils';
 import YoutubeUrlForm from './tool-section/YoutubeUrlForm';
 import ProcessingIndicator from './tool-section/ProcessingIndicator';
 import UsageLimitNotice from './tool-section/UsageLimitNotice';
 import ErrorDisplay from './tool-section/ErrorDisplay';
 import SummaryDisplay from './tool-section/SummaryDisplay';
+import TranscriptionChat from './TranscriptionChat';
 
 const ToolSection = () => {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fingerprint, setFingerprint] = useState<string | null>(null);
   const [canUse, setCanUse] = useState<boolean>(true);
@@ -31,9 +34,9 @@ const ToolSection = () => {
         const fp = await getFingerprint();
         setFingerprint(fp);
         
-        // Only check usage limit for non-authenticated users
+        // Only check usage limit for non-authenticated users (limit of 1 for anonymous)
         if (!user) {
-          const hasRemainingUses = await checkAnonymousUserLimit(fp);
+          const hasRemainingUses = await checkAnonymousUserLimit(fp, 1);
           setCanUse(hasRemainingUses);
           
           if (!hasRemainingUses) {
@@ -61,6 +64,12 @@ const ToolSection = () => {
       return;
     }
 
+    // Check if it's a playlist and user is not authenticated
+    if (!user && isPlaylistUrl(url)) {
+      toast.error('Playlists are only available for registered users. Please sign up to process playlists.');
+      return;
+    }
+
     // If anonymous user has reached the limit, prompt to sign up
     if (!user && !canUse) {
       toast.error(getLangString('usageLimitReached', currentLang));
@@ -70,18 +79,30 @@ const ToolSection = () => {
     setIsLoading(true);
     setError(null);
     setSummary(null);
+    setTranscript(null);
+    setCurrentVideoId(null);
 
     try {
       // Automatically detect if the URL is a playlist
       const isPlaylist = isPlaylistUrl(url);
+      const isShorts = isShortsUrl(url);
       
       // Save the URL to Supabase with correct arguments
       const record = await saveYouTubeUrl(url, user?.id || null, fingerprint, isPlaylist);
+      
+      // Increment anonymous usage after successful submission
+      if (!user && fingerprint) {
+        await incrementAnonymousUsage(fingerprint);
+        setCanUse(false); // Disable further usage for anonymous users
+      }
       
       // Show appropriate message based on content type
       if (isPlaylist) {
         toast.success(getLangString('videoSubmitted', currentLang));
         toast.info(getLangString('playlistProcessing', currentLang) || 'Processing playlist. This may take longer than a single video...');
+      } else if (isShorts) {
+        toast.success('YouTube Shorts submitted successfully!');
+        toast.info('Processing Shorts video...');
       } else {
         toast.success(getLangString('videoSubmitted', currentLang));
       }
@@ -91,9 +112,15 @@ const ToolSection = () => {
       
       if (summaryResult?.summary) {
         setSummary(summaryResult.summary);
+        setTranscript(summaryResult.transcript || null);
+        setCurrentVideoId(record.id);
+        
         toast.success(getLangString('summaryGeneratedSuccess', currentLang));
-        // Navigate to the summary page
-        navigate(`/summary/${record.id}`);
+        
+        // For authenticated users, navigate to summary page
+        if (user) {
+          navigate(`/summary/${record.id}`);
+        }
       } else {
         setError(getLangString('summaryGenerationFailed', currentLang));
         toast.error(getLangString('summaryGenerationError', currentLang));
@@ -123,6 +150,11 @@ const ToolSection = () => {
           <p className="text-lg text-muted-foreground">
             {getLangString('pasteAnyYouTubeLink', currentLang)}
           </p>
+          {!user && (
+            <p className="text-sm text-amber-600 mt-2">
+              Free trial: 1 video transcription without account (no playlists)
+            </p>
+          )}
         </div>
 
         <Card className="shadow-lg border-border/50 max-w-3xl mx-auto">
@@ -140,6 +172,27 @@ const ToolSection = () => {
             <ProcessingIndicator isLoading={isLoading} url={url} />
             <ErrorDisplay error={error} />
             <SummaryDisplay summary={summary} isLoading={isLoading} />
+            
+            {/* Show transcript and chat for anonymous users too */}
+            {transcript && currentVideoId && (
+              <div className="mt-8 space-y-6">
+                <Card className="shadow-md">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-4">Full Transcript</h3>
+                    <div className="max-h-96 overflow-y-auto bg-muted/20 p-4 rounded-lg">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {transcript}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <TranscriptionChat 
+                  transcriptionId={currentVideoId} 
+                  transcriptionText={transcript} 
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
