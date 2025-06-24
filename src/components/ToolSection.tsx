@@ -152,7 +152,7 @@ const ToolSection = () => {
           </p>
           {!user && (
             <p className="text-sm text-amber-600 mt-2">
-              Free trial: 1 video transcription without account (no playlists)
+              {getLangString('freeTrialMessage', currentLang)}
             </p>
           )}
         </div>

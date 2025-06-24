@@ -1,4 +1,3 @@
-
 // Available languages
 export type Language = 'pt-BR' | 'en-US' | 'es-ES';
 
@@ -135,6 +134,11 @@ const translations: Record<string, Record<Language, string>> = {
     'pt-BR': 'Você atingiu o limite de transcrições gratuitas. Cadastre-se para continuar usando o serviço.',
     'en-US': 'You have reached the limit of free transcriptions. Sign up to continue using the service.',
     'es-ES': 'Ha alcanzado el límite de transcripciones gratuitas. Regístrese para seguir utilizando el servicio.'
+  },
+  freeTrialMessage: {
+    'pt-BR': 'Teste grátis: 1 transcrição de vídeo sem conta (sem playlists)',
+    'en-US': 'Free trial: 1 video transcription without account (no playlists)',
+    'es-ES': 'Prueba gratuita: 1 transcripción de video sin cuenta (sin listas de reproducción)'
   },
   
   // Messages

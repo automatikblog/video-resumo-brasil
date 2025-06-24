@@ -14,7 +14,7 @@ const Pricing = () => {
   
   const creditPackages = [
     {
-      name: "Starter",
+      name: "Basic",
       credits: 30,
       price: "$3.99",
       originalPrice: "$5.99",
@@ -52,7 +52,7 @@ const Pricing = () => {
       savings: "33% OFF"
     },
     {
-      name: "Most Popular",
+      name: "Pro",
       credits: 100,
       price: "$7.99",
       originalPrice: "$12.99",
@@ -85,16 +85,16 @@ const Pricing = () => {
         "Todos os formatos de exportação incluídos"
       ],
       popular: true,
-      buttonText: currentLang === 'en-US' ? "Choose Most Popular" : 
-                  currentLang === 'es-ES' ? "Elegir Más Popular" : 
-                  "Escolher Mais Popular",
+      buttonText: currentLang === 'en-US' ? "Choose Pro" : 
+                  currentLang === 'es-ES' ? "Elegir Pro" : 
+                  "Escolher Pro",
       badge: currentLang === 'en-US' ? "BEST VALUE - Save 38%" : 
              currentLang === 'es-ES' ? "MEJOR VALOR - Ahorra 38%" : 
              "MELHOR VALOR - Economize 38%",
       savings: "38% OFF"
     },
     {
-      name: "High Volume",
+      name: "Enterprise",
       credits: 300,
       price: "$19.99",
       originalPrice: "$34.99",
@@ -127,9 +127,9 @@ const Pricing = () => {
         "Suporte prioritário por email e Discord"
       ],
       popular: false,
-      buttonText: currentLang === 'en-US' ? "Go Pro" : 
-                  currentLang === 'es-ES' ? "Ir Pro" : 
-                  "Ir Pro",
+      buttonText: currentLang === 'en-US' ? "Go Enterprise" : 
+                  currentLang === 'es-ES' ? "Ir Enterprise" : 
+                  "Ir Enterprise",
       badge: currentLang === 'en-US' ? "Maximum value" : 
              currentLang === 'es-ES' ? "Valor máximo" : 
              "Valor máximo",
@@ -176,7 +176,7 @@ const Pricing = () => {
             >
               {pkg.popular && (
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <Badge className="bg-red-500 hover:bg-red-600 px-4 py-2 text-sm text-white font-bold">{pkg.name}</Badge>
+                  <Badge className="bg-red-500 hover:bg-red-600 px-4 py-2 text-sm text-white font-bold">Most Popular</Badge>
                 </div>
               )}
               
@@ -187,7 +187,7 @@ const Pricing = () => {
                   </Badge>
                 </div>
                 
-                <CardTitle className="text-2xl mb-2">{pkg.popular ? 'Most Popular' : pkg.name}</CardTitle>
+                <CardTitle className="text-2xl mb-2">{pkg.name}</CardTitle>
                 
                 <div className="space-y-1">
                   <div className="flex items-center justify-center gap-2">
@@ -225,7 +225,7 @@ const Pricing = () => {
                 <Button 
                   className={`w-full text-white font-semibold py-3 ${pkg.popular 
                     ? 'bg-red-500 hover:bg-red-600 shadow-lg' 
-                    : pkg.name === 'High Volume' 
+                    : pkg.name === 'Enterprise' 
                       ? 'bg-purple-500 hover:bg-purple-600'
                       : 'bg-gray-700 hover:bg-gray-800'}`}
                   onClick={() => handlePurchaseClick(pkg.name)}

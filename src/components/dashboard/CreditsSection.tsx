@@ -14,7 +14,7 @@ const CreditsSection = () => {
 
   const creditPackages = [
     {
-      name: "Starter",
+      name: "Basic",
       credits: 30,
       price: "$3.99",
       description: "Perfect for trying out our service",
@@ -24,7 +24,7 @@ const CreditsSection = () => {
       popular: false
     },
     {
-      name: "Most Popular",
+      name: "Pro",
       credits: 100,
       price: "$7.99",
       description: "Best value for regular users",
@@ -34,7 +34,7 @@ const CreditsSection = () => {
       popular: true
     },
     {
-      name: "High Volume",
+      name: "Enterprise",
       credits: 300,
       price: "$19.99",
       description: "For power users and teams",
