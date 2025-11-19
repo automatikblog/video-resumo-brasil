@@ -12,4 +12,5 @@ export interface VideoSummary {
   fingerprint?: string | null;
   is_playlist?: boolean;
   error_message?: string;
+  chat_history?: Array<{role: 'user' | 'assistant', content: string, timestamp: string}>;
 }

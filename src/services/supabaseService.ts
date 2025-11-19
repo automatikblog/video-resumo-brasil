@@ -70,7 +70,8 @@ export const saveYouTubeUrl = async (
     // Type assertion to ensure the status is one of the expected values
     return {
       ...data,
-      status: data.status as VideoSummary['status']
+      status: data.status as VideoSummary['status'],
+      chat_history: (Array.isArray(data.chat_history) ? data.chat_history : []) as VideoSummary['chat_history']
     };
   } catch (error) {
     console.error('Failed in saveYouTubeUrl:', error);
@@ -180,7 +181,8 @@ export const getVideoSummary = async (id: string): Promise<VideoSummary | null> 
   // Type assertion to ensure the status is one of the expected values
   return {
     ...data,
-    status: data.status as VideoSummary['status']
+    status: data.status as VideoSummary['status'],
+    chat_history: (Array.isArray(data.chat_history) ? data.chat_history : []) as VideoSummary['chat_history']
   };
 };
 
@@ -278,6 +280,7 @@ export const getUserSummaries = async (userId?: string | null): Promise<VideoSum
   
   return data.map(summary => ({
     ...summary,
-    status: summary.status as VideoSummary['status']
+    status: summary.status as VideoSummary['status'],
+    chat_history: (Array.isArray(summary.chat_history) ? summary.chat_history : []) as VideoSummary['chat_history']
   }));
 };
