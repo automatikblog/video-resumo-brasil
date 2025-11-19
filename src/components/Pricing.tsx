@@ -209,10 +209,18 @@ const Pricing = () => {
                '💡 Todos os planos incluem os mesmos recursos!'}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {currentLang === 'en-US' ? 'The only difference is the number of videos you can transcribe per month. Try our free tool below first!' : 
-               currentLang === 'es-ES' ? 'La única diferencia es el número de videos que puedes transcribir por mes. ¡Prueba nuestra herramienta gratuita primero!' : 
-               'A única diferença é o número de vídeos que você pode transcrever por mês. Experimente nossa ferramenta gratuita primeiro!'}
+              {currentLang === 'en-US' ? 'The only difference is the number of videos you can transcribe per month. Try our free tool above first!' : 
+               currentLang === 'es-ES' ? 'La única diferencia es el número de videos que puedes transcribir por mes. ¡Prueba nuestra herramienta gratuita arriba primero!' : 
+               'A única diferença é o número de vídeos que você pode transcrever por mês. Experimente nossa ferramenta gratuita acima primeiro!'}
             </p>
+            <Button 
+              onClick={() => document.getElementById('ferramenta')?.scrollIntoView({ behavior: 'smooth' })}
+              className="mb-4"
+            >
+              {currentLang === 'en-US' ? 'Try Free Tool' : 
+               currentLang === 'es-ES' ? 'Probar Herramienta Gratuita' : 
+               'Experimentar Ferramenta Gratuita'}
+            </Button>
             <div className="text-sm text-muted-foreground">
               {currentLang === 'en-US' ? '✅ Monthly subscription  ✅ Secure payment via Stripe  ✅ Cancel anytime' : 
                currentLang === 'es-ES' ? '✅ Suscripción mensual  ✅ Pago seguro vía Stripe  ✅ Cancela en cualquier momento' : 
