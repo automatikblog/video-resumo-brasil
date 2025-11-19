@@ -12,128 +12,103 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  const commonFeatures = [
+    currentLang === 'en-US' ? "Transcribe any YouTube video" : 
+    currentLang === 'es-ES' ? "Transcribir cualquier video de YouTube" : 
+    "Transcrever qualquer vídeo do YouTube",
+    
+    currentLang === 'en-US' ? "Automatic AI summary" : 
+    currentLang === 'es-ES' ? "Resumen automático con IA" : 
+    "Resumo automático com IA",
+    
+    currentLang === 'en-US' ? "Full transcript viewer" : 
+    currentLang === 'es-ES' ? "Visor de transcripción completa" : 
+    "Visualizador de transcrição completa",
+    
+    currentLang === 'en-US' ? '"Chat with the video" — ask AI questions based on the transcript' : 
+    currentLang === 'es-ES' ? '"Chat con el video" — haz preguntas a la IA basadas en la transcripción' : 
+    '"Chat com o vídeo" — faça perguntas à IA baseadas na transcrição',
+    
+    currentLang === 'en-US' ? "Export Summary (TXT, Markdown, JSON, HTML)" : 
+    currentLang === 'es-ES' ? "Exportar Resumen (TXT, Markdown, JSON, HTML)" : 
+    "Exportar Resumo (TXT, Markdown, JSON, HTML)",
+    
+    currentLang === 'en-US' ? "Export Full Transcript (TXT, Markdown, JSON, HTML)" : 
+    currentLang === 'es-ES' ? "Exportar Transcripción Completa (TXT, Markdown, JSON, HTML)" : 
+    "Exportar Transcrição Completa (TXT, Markdown, JSON, HTML)",
+    
+    currentLang === 'en-US' ? "Store & access all past transcriptions in your dashboard" : 
+    currentLang === 'es-ES' ? "Almacena y accede a todas tus transcripciones pasadas en tu panel" : 
+    "Armazene e acesse todas as transcrições passadas no seu painel",
+    
+    currentLang === 'en-US' ? "Clean, simple interface for fast learning" : 
+    currentLang === 'es-ES' ? "Interfaz limpia y simple para aprendizaje rápido" : 
+    "Interface limpa e simples para aprendizado rápido"
+  ];
+
   const creditPackages = [
     {
-      name: "Basic",
-      credits: 30,
-      price: "$3.99",
-      originalPrice: "$5.99",
-      description: currentLang === 'en-US' ? "Perfect for students and casual users" : 
-                   currentLang === 'es-ES' ? "Perfecto para estudiantes y usuarios ocasionales" : 
-                   "Perfeito para estudantes e usuários casuais",
-      features: [
-        currentLang === 'en-US' ? "30 video transcriptions" : 
-        currentLang === 'es-ES' ? "30 transcripciones de video" : 
-        "30 transcrições de vídeo",
-        
-        currentLang === 'en-US' ? "AI-powered summaries" : 
-        currentLang === 'es-ES' ? "Resúmenes potenciados por IA" : 
-        "Resumos com IA",
-        
-        currentLang === 'en-US' ? "Chat with transcripts" : 
-        currentLang === 'es-ES' ? "Chat con transcripciones" : 
-        "Chat com transcrições",
-        
-        currentLang === 'en-US' ? "Export in 5 formats (TXT, JSON, CSV, SRT, VTT)" : 
-        currentLang === 'es-ES' ? "Exportar en 5 formatos (TXT, JSON, CSV, SRT, VTT)" : 
-        "Exportar em 5 formatos (TXT, JSON, CSV, SRT, VTT)",
-        
-        currentLang === 'en-US' ? "Support via email" : 
-        currentLang === 'es-ES' ? "Soporte por email" : 
-        "Suporte por email"
-      ],
+      name: currentLang === 'en-US' ? "Student Plan" : 
+            currentLang === 'es-ES' ? "Plan Estudiante" : 
+            "Plano Estudante",
+      videos: 10,
+      price: "$9",
+      pricePerMonth: currentLang === 'en-US' ? "/ month" : 
+                     currentLang === 'es-ES' ? "/ mes" : 
+                     "/ mês",
+      description: currentLang === 'en-US' ? "Perfect for students and casual learners" : 
+                   currentLang === 'es-ES' ? "Perfecto para estudiantes y aprendices ocasionales" : 
+                   "Perfeito para estudantes e aprendizes casuais",
+      features: commonFeatures,
       popular: false,
       buttonText: currentLang === 'en-US' ? "Get Started" : 
                   currentLang === 'es-ES' ? "Comenzar" : 
                   "Começar",
       badge: currentLang === 'en-US' ? "Great for beginners" : 
              currentLang === 'es-ES' ? "Genial para principiantes" : 
-             "Ótimo para iniciantes",
-      savings: "33% OFF"
+             "Ótimo para iniciantes"
     },
     {
-      name: "Pro",
-      credits: 100,
-      price: "$7.99",
-      originalPrice: "$12.99",
+      name: currentLang === 'en-US' ? "Pro Plan" : 
+            currentLang === 'es-ES' ? "Plan Pro" : 
+            "Plano Pro",
+      videos: 40,
+      price: "$19",
+      pricePerMonth: currentLang === 'en-US' ? "/ month" : 
+                     currentLang === 'es-ES' ? "/ mes" : 
+                     "/ mês",
       description: currentLang === 'en-US' ? "Best value for content creators & researchers" : 
                    currentLang === 'es-ES' ? "Mejor valor para creadores de contenido e investigadores" : 
                    "Melhor valor para criadores de conteúdo e pesquisadores",
-      features: [
-        currentLang === 'en-US' ? "100 video transcriptions" : 
-        currentLang === 'es-ES' ? "100 transcripciones de video" : 
-        "100 transcrições de vídeo",
-        
-        currentLang === 'en-US' ? "Advanced AI summaries" : 
-        currentLang === 'es-ES' ? "Resúmenes avanzados de IA" : 
-        "Resumos avançados com IA",
-        
-        currentLang === 'en-US' ? "Unlimited chat with transcripts" : 
-        currentLang === 'es-ES' ? "Chat ilimitado con transcripciones" : 
-        "Chat ilimitado com transcrições",
-        
-        currentLang === 'en-US' ? "Bulk processing (playlists & channels)" : 
-        currentLang === 'es-ES' ? "Procesamiento en lote (listas y canales)" : 
-        "Processamento em lote (playlists e canais)",
-        
-        currentLang === 'en-US' ? "Priority processing speed" : 
-        currentLang === 'es-ES' ? "Velocidad de procesamiento prioritaria" : 
-        "Velocidade de processamento prioritária",
-        
-        currentLang === 'en-US' ? "All export formats included" : 
-        currentLang === 'es-ES' ? "Todos los formatos de exportación incluidos" : 
-        "Todos os formatos de exportação incluídos"
-      ],
+      features: commonFeatures,
       popular: true,
       buttonText: currentLang === 'en-US' ? "Choose Pro" : 
                   currentLang === 'es-ES' ? "Elegir Pro" : 
                   "Escolher Pro",
-      badge: currentLang === 'en-US' ? "BEST VALUE - Save 38%" : 
-             currentLang === 'es-ES' ? "MEJOR VALOR - Ahorra 38%" : 
-             "MELHOR VALOR - Economize 38%",
-      savings: "38% OFF"
+      badge: currentLang === 'en-US' ? "BEST VALUE" : 
+             currentLang === 'es-ES' ? "MEJOR VALOR" : 
+             "MELHOR VALOR"
     },
     {
-      name: "Enterprise",
-      credits: 300,
-      price: "$19.99",
-      originalPrice: "$34.99",
+      name: currentLang === 'en-US' ? "Master Plan" : 
+            currentLang === 'es-ES' ? "Plan Master" : 
+            "Plano Master",
+      videos: 150,
+      price: "$39",
+      pricePerMonth: currentLang === 'en-US' ? "/ month" : 
+                     currentLang === 'es-ES' ? "/ mes" : 
+                     "/ mês",
       description: currentLang === 'en-US' ? "For teams, agencies & power users" : 
                    currentLang === 'es-ES' ? "Para equipos, agencias y usuarios avanzados" : 
                    "Para equipes, agências e usuários avançados",
-      features: [
-        currentLang === 'en-US' ? "300 video transcriptions" : 
-        currentLang === 'es-ES' ? "300 transcripciones de video" : 
-        "300 transcrições de vídeo",
-        
-        currentLang === 'en-US' ? "Enterprise-grade AI summaries" : 
-        currentLang === 'es-ES' ? "Resúmenes de IA de nivel empresarial" : 
-        "Resumos com IA de nível empresarial",
-        
-        currentLang === 'en-US' ? "Advanced chat & analysis features" : 
-        currentLang === 'es-ES' ? "Funciones avanzadas de chat y análisis" : 
-        "Recursos avançados de chat e análise",
-        
-        currentLang === 'en-US' ? "Unlimited bulk processing" : 
-        currentLang === 'es-ES' ? "Procesamiento en lote ilimitado" : 
-        "Processamento em lote ilimitado",
-        
-        currentLang === 'en-US' ? "Lightning-fast processing" : 
-        currentLang === 'es-ES' ? "Procesamiento ultrarrápido" : 
-        "Processamento ultrarrápido",
-        
-        currentLang === 'en-US' ? "Priority email & Discord support" : 
-        currentLang === 'es-ES' ? "Soporte prioritario por email y Discord" : 
-        "Suporte prioritário por email e Discord"
-      ],
+      features: commonFeatures,
       popular: false,
-      buttonText: currentLang === 'en-US' ? "Go Enterprise" : 
-                  currentLang === 'es-ES' ? "Ir Enterprise" : 
-                  "Ir Enterprise",
+      buttonText: currentLang === 'en-US' ? "Go Master" : 
+                  currentLang === 'es-ES' ? "Ir Master" : 
+                  "Ir Master",
       badge: currentLang === 'en-US' ? "Maximum value" : 
              currentLang === 'es-ES' ? "Valor máximo" : 
-             "Valor máximo",
-      savings: "43% OFF"
+             "Valor máximo"
     }
   ];
 
@@ -149,11 +124,6 @@ const Pricing = () => {
     <section id="precos" className="section-padding bg-gradient-to-b from-white to-accent/20">
       <div className="container-width">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 border border-green-300 rounded-full text-green-700 font-medium mb-4">
-            🎉 {currentLang === 'en-US' ? 'Limited Time Offer - Up to 43% OFF' : 
-                 currentLang === 'es-ES' ? 'Oferta por Tiempo Limitado - Hasta 43% de DESCUENTO' : 
-                 'Oferta por Tempo Limitado - Até 43% de DESCONTO'}
-          </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="gradient-text">
               {currentLang === 'en-US' ? 'Simple, Transparent Pricing' : 
@@ -162,9 +132,9 @@ const Pricing = () => {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            {currentLang === 'en-US' ? 'No subscriptions, no hidden fees. Pay once, use forever. Start with our free tool below!' : 
-             currentLang === 'es-ES' ? 'Sin suscripciones, sin tarifas ocultas. Paga una vez, usa para siempre. ¡Comienza con nuestra herramienta gratuita a continuación!' : 
-             'Sem assinaturas, sem taxas ocultas. Pague uma vez, use para sempre. Comece com nossa ferramenta gratuita abaixo!'}
+            {currentLang === 'en-US' ? 'All plans include the same features. Choose based on how many videos you need per month.' : 
+             currentLang === 'es-ES' ? 'Todos los planes incluyen las mismas funciones. Elige según cuántos videos necesites por mes.' : 
+             'Todos os planos incluem os mesmos recursos. Escolha com base em quantos vídeos você precisa por mês.'}
           </p>
         </div>
 
@@ -181,23 +151,17 @@ const Pricing = () => {
               )}
               
               <CardHeader className="text-center pb-2">
-                <div className="flex justify-center mb-3">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-bold px-3 py-1">
-                    {pkg.savings}
-                  </Badge>
-                </div>
-                
                 <CardTitle className="text-2xl mb-2">{pkg.name}</CardTitle>
                 
                 <div className="space-y-1">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-lg text-muted-foreground line-through">{pkg.originalPrice}</span>
+                  <div className="flex items-center justify-center gap-1">
                     <span className="text-4xl font-bold text-brand-purple">{pkg.price}</span>
+                    <span className="text-lg text-muted-foreground">{pkg.pricePerMonth}</span>
                   </div>
-                  <div className="text-2xl font-semibold text-gray-900">
-                    {pkg.credits} {currentLang === 'en-US' ? 'Credits' : 
-                                   currentLang === 'es-ES' ? 'Créditos' : 
-                                   'Créditos'}
+                  <div className="text-xl font-semibold text-foreground">
+                    {currentLang === 'en-US' ? `Up to ${pkg.videos} videos per month` : 
+                     currentLang === 'es-ES' ? `Hasta ${pkg.videos} videos por mes` : 
+                     `Até ${pkg.videos} vídeos por mês`}
                   </div>
                 </div>
                 
@@ -240,19 +204,19 @@ const Pricing = () => {
         <div className="mt-12 text-center">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-2xl mx-auto">
             <h3 className="font-bold text-lg mb-2">
-              {currentLang === 'en-US' ? '💡 Not sure which plan to choose?' : 
-               currentLang === 'es-ES' ? '💡 ¿No estás seguro de qué plan elegir?' : 
-               '💡 Não tem certeza de qual plano escolher?'}
+              {currentLang === 'en-US' ? '💡 All plans include the same features!' : 
+               currentLang === 'es-ES' ? '💡 ¡Todos los planes incluyen las mismas funciones!' : 
+               '💡 Todos os planos incluem os mesmos recursos!'}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {currentLang === 'en-US' ? 'Try our free tool below first! No registration required.' : 
-               currentLang === 'es-ES' ? '¡Prueba nuestra herramienta gratuita primero! No se requiere registro.' : 
-               'Experimente nossa ferramenta gratuita primeiro! Não é necessário registro.'}
+              {currentLang === 'en-US' ? 'The only difference is the number of videos you can transcribe per month. Try our free tool below first!' : 
+               currentLang === 'es-ES' ? 'La única diferencia es el número de videos que puedes transcribir por mes. ¡Prueba nuestra herramienta gratuita primero!' : 
+               'A única diferença é o número de vídeos que você pode transcrever por mês. Experimente nossa ferramenta gratuita primeiro!'}
             </p>
             <div className="text-sm text-muted-foreground">
-              {currentLang === 'en-US' ? '✅ Credits never expire  ✅ Secure payment via Stripe  ✅ Instant delivery' : 
-               currentLang === 'es-ES' ? '✅ Los créditos nunca expiran  ✅ Pago seguro vía Stripe  ✅ Entrega instantánea' : 
-               '✅ Créditos nunca expiram  ✅ Pagamento seguro via Stripe  ✅ Entrega instantânea'}
+              {currentLang === 'en-US' ? '✅ Monthly subscription  ✅ Secure payment via Stripe  ✅ Cancel anytime' : 
+               currentLang === 'es-ES' ? '✅ Suscripción mensual  ✅ Pago seguro vía Stripe  ✅ Cancela en cualquier momento' : 
+               '✅ Assinatura mensal  ✅ Pagamento seguro via Stripe  ✅ Cancele a qualquer momento'}
             </div>
           </div>
         </div>
