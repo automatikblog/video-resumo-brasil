@@ -32,25 +32,22 @@ const HeroSection = () => {
       case 'en-US':
         return (
           <>
-            <span>Transform YouTube videos into </span>
-            <span className="gradient-text">searchable transcripts</span>
-            <span> in seconds</span>
+            <span>Turn Any YouTube Video Into a </span>
+            <span className="gradient-text">Personal AI Tutor</span>
           </>
         );
       case 'es-ES':
         return (
           <>
-            <span>Transforma videos de YouTube en </span>
-            <span className="gradient-text">transcripciones buscables</span>
-            <span> en segundos</span>
+            <span>Convierte Cualquier Video de YouTube en un </span>
+            <span className="gradient-text">Tutor de IA Personal</span>
           </>
         );
       default: // Portuguese
         return (
           <>
-            <span>Transforme vídeos do YouTube em </span>
-            <span className="gradient-text">transcrições pesquisáveis</span>
-            <span> em segundos</span>
+            <span>Transforme Qualquer Vídeo do YouTube em um </span>
+            <span className="gradient-text">Tutor de IA Pessoal</span>
           </>
         );
     }
@@ -59,11 +56,29 @@ const HeroSection = () => {
   const renderHeroDescription = () => {
     switch(currentLang) {
       case 'en-US':
-        return 'Extract accurate transcripts from any YouTube video, create AI-powered summaries, and chat with the content. Perfect for researchers, students, and content creators.';
+        return (
+          <>
+            Ask questions, get explanations, and explore the content — all powered by the video's transcript.
+            <br /><br />
+            <strong>Perfect for students, researchers, and fast learners.</strong>
+          </>
+        );
       case 'es-ES':
-        return 'Extrae transcripciones precisas de cualquier video de YouTube, crea resúmenes con IA y chatea con el contenido. Perfecto para investigadores, estudiantes y creadores de contenido.';
+        return (
+          <>
+            Haz preguntas, obtén explicaciones y explora el contenido — todo impulsado por la transcripción del video.
+            <br /><br />
+            <strong>Perfecto para estudiantes, investigadores y aprendices rápidos.</strong>
+          </>
+        );
       default: // Portuguese
-        return 'Extraia transcrições precisas de qualquer vídeo do YouTube, crie resumos com IA e converse com o conteúdo. Perfeito para pesquisadores, estudantes e criadores de conteúdo.';
+        return (
+          <>
+            Faça perguntas, obtenha explicações e explore o conteúdo — tudo alimentado pela transcrição do vídeo.
+            <br /><br />
+            <strong>Perfeito para estudantes, pesquisadores e aprendizes rápidos.</strong>
+          </>
+        );
     }
   };
 
@@ -80,9 +95,9 @@ const HeroSection = () => {
 
   const renderFeatureBadges = () => {
     const features = {
-      'en-US': ['✓ Instant transcripts', '✓ AI summaries', '✓ Multiple export formats'],
-      'es-ES': ['✓ Transcripciones instantáneas', '✓ Resúmenes de IA', '✓ Múltiples formatos de exportación'],
-      'pt-BR': ['✓ Transcrições instantâneas', '✓ Resumos com IA', '✓ Múltiplos formatos de exportação']
+      'en-US': ['✔ Chat with the video', '✔ Instant transcript & summary', '✔ Multiple export formats'],
+      'es-ES': ['✔ Chatea con el video', '✔ Transcripción y resumen instantáneos', '✔ Múltiples formatos de exportación'],
+      'pt-BR': ['✔ Converse com o vídeo', '✔ Transcrição e resumo instantâneos', '✔ Múltiplos formatos de exportação']
     };
 
     return features[currentLang] || features['pt-BR'];
