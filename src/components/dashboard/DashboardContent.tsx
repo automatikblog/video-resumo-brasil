@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardTable from './DashboardTable';
 import CreditsSection from './CreditsSection';
+import SubscriptionPlans from './SubscriptionPlans';
 import LinkAnonymousTranscripts from './LinkAnonymousTranscripts';
 import { VideoSummary } from '@/types/videoSummary';
-import { Loader2, RefreshCw, FileVideo, CreditCard } from 'lucide-react';
+import { Loader2, RefreshCw, FileVideo, CreditCard, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface DashboardContentProps {
@@ -25,10 +26,12 @@ const DashboardContent = ({ summaries, refreshSummaries, isLoading = false }: Da
   const processingCount = summaries.filter(s => s.status === 'pending' || s.status === 'processing').length;
   const hasProcessingItems = processingCount > 0;
 
-  // Check if URL has #credits hash to switch to credits tab
+  // Check if URL has hash to switch tabs
   React.useEffect(() => {
     if (window.location.hash === '#credits') {
       setActiveTab('credits');
+    } else if (window.location.hash === '#subscription') {
+      setActiveTab('subscription');
     }
   }, []);
   
@@ -37,14 +40,18 @@ const DashboardContent = ({ summaries, refreshSummaries, isLoading = false }: Da
       <h1 className="text-3xl font-bold mb-6 gradient-text">{getLangString('dashboard', currentLang) || 'Dashboard'}</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="summaries" className="flex items-center gap-2">
             <FileVideo className="h-4 w-4" />
             Video Summaries
           </TabsTrigger>
+          <TabsTrigger value="subscription" className="flex items-center gap-2">
+            <Crown className="h-4 w-4" />
+            Subscription Plans
+          </TabsTrigger>
           <TabsTrigger value="credits" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
-            Purchase Credits
+            Buy Credits
           </TabsTrigger>
         </TabsList>
 
@@ -95,6 +102,10 @@ const DashboardContent = ({ summaries, refreshSummaries, isLoading = false }: Da
               <DashboardTable summaries={summaries} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="subscription">
+          <SubscriptionPlans />
         </TabsContent>
 
         <TabsContent value="credits">

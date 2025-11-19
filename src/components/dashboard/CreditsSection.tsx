@@ -95,9 +95,10 @@ const CreditsSection = () => {
   return (
     <div className="space-y-6" id="credits">
       <div className="text-center">
-        <h2 className="text-3xl font-bold mb-4 gradient-text">Purchase Credits</h2>
-        <p className="text-muted-foreground mb-8">
-          Buy credits to use our video summarization service. Each video summary costs 1 credit.
+        <h2 className="text-3xl font-bold mb-4 gradient-text">Buy Credits</h2>
+        <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+          Purchase credits for one-time use. Great if you don't need a monthly subscription. 
+          Each video transcription costs 1 credit. <strong>Credits never expire!</strong>
         </p>
       </div>
 
