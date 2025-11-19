@@ -54,9 +54,9 @@ const Features = () => {
       title: currentLang === 'en-US' ? 'Multiple Export Formats' : 
              currentLang === 'es-ES' ? 'Múltiples Formatos de Exportación' : 
              'Múltiplos Formatos de Exportação',
-      description: currentLang === 'en-US' ? 'Download transcripts in TXT, JSON, CSV, SRT, or VTT formats. Perfect for subtitles, analysis, or integration with other tools.' : 
-                   currentLang === 'es-ES' ? 'Descarga transcripciones en formatos TXT, JSON, CSV, SRT o VTT. Perfecto para subtítulos, análisis o integración con otras herramientas.' : 
-                   'Baixe transcrições em formatos TXT, JSON, CSV, SRT ou VTT. Perfeito para legendas, análise ou integração com outras ferramentas.'
+      description: currentLang === 'en-US' ? 'Download transcripts in TXT, Markdown (MD), JSON, or HTML formats. Perfect for documentation, analysis, or integration with other tools.' : 
+                   currentLang === 'es-ES' ? 'Descarga transcripciones en formatos TXT, Markdown (MD), JSON o HTML. Perfecto para documentación, análisis o integración con otras herramientas.' : 
+                   'Baixe transcrições em formatos TXT, Markdown (MD), JSON ou HTML. Perfeito para documentação, análise ou integração com outras ferramentas.'
     },
     {
       icon: (
