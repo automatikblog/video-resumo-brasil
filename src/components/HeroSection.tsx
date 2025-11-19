@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import { useNavigate } from 'react-router-dom';
+import heroVideoThumbnail from '@/assets/hero-video-thumbnail.jpg';
 
 const HeroSection = () => {
   const currentLang = getCurrentLang();
@@ -145,94 +146,109 @@ const HeroSection = () => {
           </div>
           
           <div className="relative animate-fade-in">
-            <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 border border-border/50">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-4 border-b border-border/30">
-                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue animate-pulse"></div>
-                  <h3 className="text-lg font-semibold bg-gradient-to-r from-brand-purple to-brand-blue bg-clip-text text-transparent">
-                    {currentLang === 'en-US' ? 'Chat With Transcript' : 
-                     currentLang === 'es-ES' ? 'Chat con Transcripción' : 
-                     'Chat com Transcrição'}
-                  </h3>
-                </div>
-                
-                <div className="space-y-3 min-h-[280px]">
-                  {/* AI Initial Message */}
-                  <div className="flex gap-3 animate-fade-in">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                      AI
-                    </div>
-                    <div className="bg-muted/50 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%]">
-                      <p className="text-sm">
-                        {currentLang === 'en-US' ? 'Hello! I can answer questions about this transcription. What would you like to know?' :
-                         currentLang === 'es-ES' ? '¡Hola! Puedo responder preguntas sobre esta transcripción. ¿Qué te gustaría saber?' :
-                         'Olá! Posso responder perguntas sobre esta transcrição. O que você gostaria de saber?'}
-                      </p>
-                      <span className="text-xs text-muted-foreground mt-1 block">11:23 PM</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Video Section */}
+              <div className="relative z-10 bg-white rounded-2xl shadow-xl p-4 border border-border/50">
+                <div className="aspect-video bg-muted rounded-xl overflow-hidden relative group cursor-pointer">
+                  <img 
+                    src={heroVideoThumbnail} 
+                    alt="YouTube Video Thumbnail"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
                     </div>
                   </div>
-                  
-                  {/* User Message */}
-                  {animationStep >= 1 && (
-                    <div className="flex gap-3 justify-end animate-fade-in">
-                      <div className="bg-gradient-to-r from-brand-purple to-brand-blue rounded-2xl rounded-tr-none px-4 py-3 max-w-[85%]">
-                        <p className="text-sm text-white">
-                          {currentLang === 'en-US' ? 'What is this video about?' :
-                           currentLang === 'es-ES' ? '¿De qué trata este video?' :
-                           'Sobre o que é este vídeo?'}
-                        </p>
-                        <span className="text-xs text-white/80 mt-1 block">11:23 PM</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* AI Response */}
-                  {animationStep >= 2 && (
-                    <div className="flex gap-3 animate-fade-in">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                        AI
-                      </div>
-                      <div className="bg-muted/50 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%]">
-                        <p className="text-sm">
-                          {currentLang === 'en-US' ? 'This video is about how to get anything you want in life by understanding how your brain works and structuring it in three ways to align your energy, focus, and motivation. The speaker shares his personal experience of transforming himself from someone who barely passed high school and was broke to someone with a six-pack and a nine-figure net worth, and being married to a pretty lady.' :
-                           currentLang === 'es-ES' ? 'Este video trata sobre cómo conseguir cualquier cosa que quieras en la vida entendiendo cómo funciona tu cerebro y estructurándolo de tres maneras para alinear tu energía, enfoque y motivación. El orador comparte su experiencia personal de transformarse de alguien que apenas pasó la escuela secundaria y estaba en bancarrota a alguien con un six-pack y un patrimonio neto de nueve cifras, y estar casado con una mujer bonita.' :
-                           'Este vídeo é sobre como conseguir qualquer coisa que você queira na vida entendendo como seu cérebro funciona e estruturando-o de três maneiras para alinhar sua energia, foco e motivação. O palestrante compartilha sua experiência pessoal de se transformar de alguém que mal passou no ensino médio e estava falido para alguém com um tanquinho e um patrimônio líquido de nove dígitos, e casado com uma mulher bonita.'}
-                        </p>
-                        <span className="text-xs text-muted-foreground mt-1 block">11:23 PM</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
-                
-                <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-                  <input 
-                    type="text" 
-                    placeholder={currentLang === 'en-US' ? 'Ask a question about the transcription...' :
-                                 currentLang === 'es-ES' ? 'Haz una pregunta sobre la transcripción...' :
-                                 'Faça uma pergunta sobre a transcrição...'}
-                    className="flex-1 px-4 py-2 text-sm bg-muted/30 rounded-full border border-border/50 focus:outline-none focus:border-brand-purple/50 transition-colors"
-                    disabled
-                  />
-                  <button className="p-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                  </button>
+                <div className="mt-3 px-2">
+                  <h4 className="font-semibold text-sm line-clamp-2">
+                    {currentLang === 'en-US' ? '5 Productivity Hacks That Changed My Life' :
+                     currentLang === 'es-ES' ? '5 Trucos de Productividad Que Cambiaron Mi Vida' :
+                     '5 Truques de Produtividade Que Mudaram Minha Vida'}
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-1">ProductivityPro • 2.4M views</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="absolute -z-10 -top-4 -right-4 -left-4 -bottom-4 bg-gradient-to-r from-brand-purple/20 to-brand-blue/20 rounded-2xl blur-lg"></div>
-            
-            <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2">
-              <div className="bg-white rounded-lg shadow-lg p-4 w-40 animate-bounce-slow">
-                <p className="text-xs font-semibold text-center">
-                  {currentLang === 'en-US' ? 
-                    'Complete transcript + AI summary ready!' : 
-                    currentLang === 'es-ES' ? 
-                      '¡Transcripción completa + resumen de IA listo!' : 
-                      'Transcrição completa + resumo IA pronto!'}
-                </p>
+
+              {/* Chat Section */}
+              <div className="relative z-10 bg-white rounded-2xl shadow-xl p-4 border border-border/50">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 pb-3 border-b border-border/30">
+                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue animate-pulse"></div>
+                    <h3 className="text-sm font-semibold bg-gradient-to-r from-brand-purple to-brand-blue bg-clip-text text-transparent">
+                      {currentLang === 'en-US' ? 'Chat With Transcript' : 
+                       currentLang === 'es-ES' ? 'Chat con Transcripción' : 
+                       'Chat com Transcrição'}
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-3 min-h-[240px]">
+                    {/* AI Initial Message */}
+                    <div className="flex gap-2 animate-fade-in">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                        AI
+                      </div>
+                      <div className="bg-muted/50 rounded-2xl rounded-tl-none px-3 py-2 max-w-[85%]">
+                        <p className="text-xs">
+                          {currentLang === 'en-US' ? 'Hi! Ask me anything about this video.' :
+                           currentLang === 'es-ES' ? '¡Hola! Pregúntame sobre este video.' :
+                           'Oi! Me pergunte sobre este vídeo.'}
+                        </p>
+                        <span className="text-[10px] text-muted-foreground mt-1 block">11:23 PM</span>
+                      </div>
+                    </div>
+                    
+                    {/* User Message */}
+                    {animationStep >= 1 && (
+                      <div className="flex gap-2 justify-end animate-fade-in">
+                        <div className="bg-gradient-to-r from-brand-purple to-brand-blue rounded-2xl rounded-tr-none px-3 py-2 max-w-[85%]">
+                          <p className="text-xs text-white">
+                            {currentLang === 'en-US' ? 'What are the 5 productivity hacks?' :
+                             currentLang === 'es-ES' ? '¿Cuáles son los 5 trucos de productividad?' :
+                             'Quais são os 5 truques de produtividade?'}
+                          </p>
+                          <span className="text-[10px] text-white/80 mt-1 block">11:23 PM</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* AI Response */}
+                    {animationStep >= 2 && (
+                      <div className="flex gap-2 animate-fade-in">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                          AI
+                        </div>
+                        <div className="bg-muted/50 rounded-2xl rounded-tl-none px-3 py-2 max-w-[85%]">
+                          <p className="text-xs leading-relaxed">
+                            {currentLang === 'en-US' ? 'The 5 productivity hacks are: 1) Time blocking - scheduling specific tasks in your calendar, 2) The 2-minute rule - if it takes less than 2 minutes, do it now, 3) Single-tasking instead of multitasking, 4) Morning routines to set the day right, and 5) Regular breaks using the Pomodoro technique. These simple changes helped transform daily productivity!' :
+                             currentLang === 'es-ES' ? 'Los 5 trucos de productividad son: 1) Bloqueo de tiempo - programar tareas específicas en tu calendario, 2) La regla de 2 minutos - si toma menos de 2 minutos, hazlo ahora, 3) Monotarea en lugar de multitarea, 4) Rutinas matutinas para empezar el día bien, y 5) Descansos regulares usando la técnica Pomodoro. ¡Estos simples cambios ayudaron a transformar la productividad diaria!' :
+                             'Os 5 truques de produtividade são: 1) Bloqueio de tempo - agendar tarefas específicas no calendário, 2) A regra dos 2 minutos - se leva menos de 2 minutos, faça agora, 3) Monotarefa ao invés de multitarefa, 4) Rotinas matinais para começar o dia bem, e 5) Pausas regulares usando a técnica Pomodoro. Essas mudanças simples ajudaram a transformar a produtividade diária!'}
+                          </p>
+                          <span className="text-[10px] text-muted-foreground mt-1 block">11:23 PM</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+                    <input 
+                      type="text" 
+                      placeholder={currentLang === 'en-US' ? 'Ask about the video...' :
+                                   currentLang === 'es-ES' ? 'Pregunta sobre el video...' :
+                                   'Pergunte sobre o vídeo...'}
+                      className="flex-1 px-3 py-1.5 text-xs bg-muted/30 rounded-full border border-border/50 focus:outline-none focus:border-brand-purple/50 transition-colors"
+                      disabled
+                    />
+                    <button className="p-1.5 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
