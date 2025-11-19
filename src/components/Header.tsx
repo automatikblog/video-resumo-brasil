@@ -61,6 +61,15 @@ const Header = () => {
     return getLanguageLabel(currentLang);
   };
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
@@ -74,21 +83,21 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/#como-funciona" className="text-sm font-medium hover:text-primary transition-colors">
+          <a href="#como-funciona" onClick={(e) => handleNavClick(e, 'como-funciona')} className="text-sm font-medium hover:text-primary transition-colors">
             {getLangString('howItWorks', currentLang)}
-          </Link>
-          <Link to="/#recursos" className="text-sm font-medium hover:text-primary transition-colors">
+          </a>
+          <a href="#recursos" onClick={(e) => handleNavClick(e, 'recursos')} className="text-sm font-medium hover:text-primary transition-colors">
             {getLangString('features', currentLang)}
-          </Link>
-          <Link to="/#casos" className="text-sm font-medium hover:text-primary transition-colors">
+          </a>
+          <a href="#casos" onClick={(e) => handleNavClick(e, 'casos')} className="text-sm font-medium hover:text-primary transition-colors">
             {getLangString('useCases', currentLang)}
-          </Link>
-          <Link to="/#faq" className="text-sm font-medium hover:text-primary transition-colors">
+          </a>
+          <a href="#faq" onClick={(e) => handleNavClick(e, 'faq')} className="text-sm font-medium hover:text-primary transition-colors">
             {getLangString('faq', currentLang)}
-          </Link>
-          <Link to="/#precos" className="text-sm font-medium hover:text-primary transition-colors">
+          </a>
+          <a href="#precos" onClick={(e) => handleNavClick(e, 'precos')} className="text-sm font-medium hover:text-primary transition-colors">
             {getLangString('pricing', currentLang)}
-          </Link>
+          </a>
         </nav>
         
         <div className="flex items-center space-x-4">
@@ -160,41 +169,41 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="md:hidden p-4 bg-background border-t border-border/40">
           <nav className="flex flex-col space-y-4">
-            <Link 
-              to="/#como-funciona" 
+            <a 
+              href="#como-funciona" 
               className="text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, 'como-funciona')}
             >
               {getLangString('howItWorks', currentLang)}
-            </Link>
-            <Link 
-              to="/#recursos" 
+            </a>
+            <a 
+              href="#recursos" 
               className="text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, 'recursos')}
             >
               {getLangString('features', currentLang)}
-            </Link>
-            <Link 
-              to="/#casos" 
+            </a>
+            <a 
+              href="#casos" 
               className="text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, 'casos')}
             >
               {getLangString('useCases', currentLang)}
-            </Link>
-            <Link 
-              to="/#faq" 
+            </a>
+            <a 
+              href="#faq" 
               className="text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, 'faq')}
             >
               {getLangString('faq', currentLang)}
-            </Link>
-            <Link 
-              to="/#precos" 
+            </a>
+            <a 
+              href="#precos" 
               className="text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, 'precos')}
             >
               {getLangString('pricing', currentLang)}
-            </Link>
+            </a>
             {user && (
               <Link 
                 to="/dashboard" 
