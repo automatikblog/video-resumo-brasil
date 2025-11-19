@@ -118,6 +118,7 @@ export type Database = {
       }
       video_summaries: {
         Row: {
+          chat_history: Json | null
           created_at: string
           error_message: string | null
           fingerprint: string | null
@@ -132,6 +133,7 @@ export type Database = {
           youtube_url: string
         }
         Insert: {
+          chat_history?: Json | null
           created_at?: string
           error_message?: string | null
           fingerprint?: string | null
@@ -146,6 +148,7 @@ export type Database = {
           youtube_url: string
         }
         Update: {
+          chat_history?: Json | null
           created_at?: string
           error_message?: string | null
           fingerprint?: string | null

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +39,39 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
   const [isLoading, setIsLoading] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const currentLang = getCurrentLang();
+
+  // Load chat history on mount
+  useEffect(() => {
+    loadChatHistory();
+  }, [transcriptionId]);
+
+  const loadChatHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('video_summaries')
+        .select('chat_history')
+        .eq('id', transcriptionId)
+        .single();
+      
+      if (error) {
+        console.error('Error loading chat history:', error);
+        return;
+      }
+
+      if (data?.chat_history && Array.isArray(data.chat_history) && data.chat_history.length > 0) {
+        const chatHistory = data.chat_history as Array<{role: 'user' | 'assistant', content: string, timestamp: string}>;
+        const loadedMessages = chatHistory.map((msg, idx: number) => ({
+          id: idx + 2, // Start after greeting
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(prev => [prev[0], ...loadedMessages]); // Keep greeting
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    }
+  };
   
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -77,7 +110,7 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       const geminiApiKey = apiKeyData.key;
       console.log("Got API key (first 5 chars):", geminiApiKey.substring(0, 5) + "...");
       
-      // Prepare message history for context
+      // Prepare message history for context (excluding greeting)
       const messageHistory = messages
         .filter(msg => msg.id !== 1) // Skip the initial greeting
         .map(msg => ({
@@ -85,9 +118,17 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
           parts: [{ text: msg.content }]
         }));
       
-      // Prepare the system prompt with transcript
+      // Build conversation context from message history
+      const conversationContext = messageHistory.length > 0
+        ? `\n\nPrevious conversation:\n${messageHistory.map(msg => 
+            `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.parts[0].text}`
+          ).join('\n')}\n`
+        : '';
+      
+      // Prepare the system prompt with transcript and conversation history
       const systemPrompt = `You are an assistant that answers questions based on the following transcription. 
       Be helpful, concise and provide specific information from the transcription when possible.
+      ${conversationContext}
       
       TRANSCRIPTION:
       ${transcriptionText}`;
@@ -157,6 +198,31 @@ const TranscriptionChat: React.FC<TranscriptionChatProps> = ({ transcriptionId, 
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Save chat history to database (excluding the greeting message)
+      try {
+        const { data: currentData } = await supabase
+          .from('video_summaries')
+          .select('chat_history')
+          .eq('id', transcriptionId)
+          .single();
+
+        const existingChatHistory = (Array.isArray(currentData?.chat_history) ? currentData.chat_history : []) as Array<{role: 'user' | 'assistant', content: string, timestamp: string}>;
+        
+        const updatedChatHistory = [
+          ...existingChatHistory,
+          { role: 'user' as const, content: input, timestamp: userMessage.timestamp.toISOString() },
+          { role: 'assistant' as const, content: aiResponse, timestamp: assistantMessage.timestamp.toISOString() }
+        ];
+
+        await supabase
+          .from('video_summaries')
+          .update({ chat_history: updatedChatHistory })
+          .eq('id', transcriptionId);
+      } catch (saveError) {
+        console.error('Error saving chat history:', saveError);
+        // Don't show error to user, just log it
+      }
     } catch (error) {
       console.error('Error calling AI API:', error);
       
