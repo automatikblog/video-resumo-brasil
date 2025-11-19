@@ -21,9 +21,9 @@ const HowItWorks = () => {
       title: currentLang === 'en-US' ? 'AI Processing' : 
              currentLang === 'es-ES' ? 'Procesamiento con IA' : 
              'Processamento com IA',
-      description: currentLang === 'en-US' ? 'Our advanced AI extracts the audio, processes the speech, and generates accurate transcriptions with timestamps and speaker identification.' : 
-                   currentLang === 'es-ES' ? 'Nuestra IA avanzada extrae el audio, procesa el habla y genera transcripciones precisas con marcas de tiempo e identificación de hablantes.' : 
-                   'Nossa IA avançada extrai o áudio, processa a fala e gera transcrições precisas com timestamps e identificação de falantes.',
+      description: currentLang === 'en-US' ? 'We fetch the video\'s captions directly from YouTube (original or auto-generated), then generate AI summaries and the full transcript you can chat with.' : 
+                   currentLang === 'es-ES' ? 'Obtenemos los subtítulos del video directamente de YouTube (originales o generados automáticamente), luego generamos resúmenes de IA y la transcripción completa con la que puedes chatear.' : 
+                   'Buscamos as legendas do vídeo diretamente do YouTube (originais ou geradas automaticamente), depois geramos resumos de IA e a transcrição completa com a qual você pode conversar.',
       icon: '🤖'
     },
     {
