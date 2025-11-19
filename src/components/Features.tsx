@@ -15,9 +15,9 @@ const Features = () => {
       title: currentLang === 'en-US' ? 'Accurate Transcriptions' : 
              currentLang === 'es-ES' ? 'Transcripciones Precisas' : 
              'Transcrições Precisas',
-      description: currentLang === 'en-US' ? 'Get word-perfect transcripts with timestamps, speaker identification, and proper formatting. Our AI ensures 95%+ accuracy across multiple languages.' : 
-                   currentLang === 'es-ES' ? 'Obtén transcripciones perfectas con marcas de tiempo, identificación de hablantes y formato adecuado. Nuestra IA garantiza más del 95% de precisión en múltiples idiomas.' : 
-                   'Obtenha transcrições perfeitas com timestamps, identificação de falantes e formatação adequada. Nossa IA garante mais de 95% de precisão em múltiplos idiomas.'
+      description: currentLang === 'en-US' ? 'Get clean transcripts based on YouTube\'s captions (original or auto-generated). Supports any language available in the video.' : 
+                   currentLang === 'es-ES' ? 'Obtén transcripciones limpias basadas en los subtítulos de YouTube (originales o generados automáticamente). Compatible con cualquier idioma disponible en el video.' : 
+                   'Obtenha transcrições limpas baseadas nas legendas do YouTube (originais ou geradas automaticamente). Suporta qualquer idioma disponível no vídeo.'
     },
     {
       icon: (
