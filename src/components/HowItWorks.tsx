@@ -31,9 +31,9 @@ const HowItWorks = () => {
       title: currentLang === 'en-US' ? 'Get Results Instantly' : 
              currentLang === 'es-ES' ? 'Obtener Resultados Instantáneamente' : 
              'Obtenha Resultados Instantaneamente',
-      description: currentLang === 'en-US' ? 'Download transcripts in multiple formats (TXT, JSON, CSV, SRT, VTT), get AI-powered summaries, and chat with the content using our AI assistant.' : 
-                   currentLang === 'es-ES' ? 'Descarga transcripciones en múltiples formatos (TXT, JSON, CSV, SRT, VTT), obtén resúmenes con IA y chatea con el contenido usando nuestro asistente de IA.' : 
-                   'Baixe transcrições em múltiplos formatos (TXT, JSON, CSV, SRT, VTT), obtenha resumos com IA e converse com o conteúdo usando nosso assistente de IA.',
+      description: currentLang === 'en-US' ? 'Download transcripts in multiple formats (TXT, Markdown (MD), JSON, HTML), get AI-powered summaries, and chat with the content using our AI assistant.' : 
+                   currentLang === 'es-ES' ? 'Descarga transcripciones en múltiples formatos (TXT, Markdown (MD), JSON, HTML), obtén resúmenes con IA y chatea con el contenido usando nuestro asistente de IA.' : 
+                   'Baixe transcrições em múltiplos formatos (TXT, Markdown (MD), JSON, HTML), obtenha resumos com IA e converse com o conteúdo usando nosso assistente de IA.',
       icon: '⚡'
     }
   ];
