@@ -50,9 +50,9 @@ const HowItWorks = () => {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            {currentLang === 'en-US' ? 'Transform any YouTube video into searchable, actionable content in three simple steps.' : 
-             currentLang === 'es-ES' ? 'Transforma cualquier video de YouTube en contenido buscable y procesable en tres simples pasos.' : 
-             'Transforme qualquer vídeo do YouTube em conteúdo pesquisável e acionável em três passos simples.'}
+            {currentLang === 'en-US' ? 'Transform any YouTube video into interactive, AI-powered transcripts in three simple steps.' : 
+             currentLang === 'es-ES' ? 'Transforma cualquier video de YouTube en transcripciones interactivas impulsadas por IA en tres simples pasos.' : 
+             'Transforme qualquer vídeo do YouTube em transcrições interativas alimentadas por IA em três passos simples.'}
           </p>
         </div>
 
