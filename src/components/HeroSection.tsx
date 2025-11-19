@@ -171,27 +171,48 @@ const HeroSection = () => {
                   </h4>
                   <p className="text-xs text-muted-foreground mt-1">ProductivityPro • 2.4M views</p>
                 </div>
+                
+                {/* Transcript Preview */}
+                <div className="mt-3 px-2 pt-3 border-t border-border/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-brand-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {currentLang === 'en-US' ? 'Transcript' :
+                       currentLang === 'es-ES' ? 'Transcripción' :
+                       'Transcrição'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                    {currentLang === 'en-US' ? 
+                      '"Hey everyone! Today I\'m sharing the 5 productivity hacks that completely transformed how I work. First up is time blocking - this changed everything for me. Instead of just having a to-do list, I actually schedule specific blocks of time for each task..."' :
+                     currentLang === 'es-ES' ? 
+                      '"¡Hola a todos! Hoy comparto los 5 trucos de productividad que transformaron completamente cómo trabajo. Primero está el bloqueo de tiempo - esto lo cambió todo para mí. En lugar de solo tener una lista de tareas, programo bloques específicos de tiempo para cada tarea..."' :
+                      '"Olá pessoal! Hoje estou compartilhando os 5 truques de produtividade que transformaram completamente como trabalho. Primeiro é o bloqueio de tempo - isso mudou tudo para mim. Em vez de apenas ter uma lista de tarefas, eu agenda blocos específicos de tempo para cada tarefa..."'}
+                  </p>
+                </div>
               </div>
 
               {/* Chat Section */}
-              <div className="relative z-10 bg-white rounded-2xl shadow-xl p-4 border border-border/50">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 pb-3 border-b border-border/30">
-                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue animate-pulse"></div>
-                    <h3 className="text-sm font-semibold bg-gradient-to-r from-brand-purple to-brand-blue bg-clip-text text-transparent">
-                      {currentLang === 'en-US' ? 'Chat With Transcript' : 
-                       currentLang === 'es-ES' ? 'Chat con Transcripción' : 
-                       'Chat com Transcrição'}
-                    </h3>
-                  </div>
-                  
-                  <div className="space-y-3 min-h-[240px]">
+              <div className="relative z-10 bg-white rounded-2xl shadow-xl p-4 border border-border/50 flex flex-col">
+                <div className="flex items-center gap-2 pb-3 border-b border-border/30">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue animate-pulse"></div>
+                  <h3 className="text-sm font-semibold bg-gradient-to-r from-brand-purple to-brand-blue bg-clip-text text-transparent">
+                    {currentLang === 'en-US' ? 'Chat With Transcript' : 
+                     currentLang === 'es-ES' ? 'Chat con Transcripción' : 
+                     'Chat com Transcrição'}
+                  </h3>
+                </div>
+                
+                <div className="flex-1 min-h-[280px] max-h-[280px] overflow-hidden py-3">
+                  <div className="space-y-3 h-full flex flex-col">
                     {/* AI Initial Message */}
                     <div className="flex gap-2 animate-fade-in">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                         AI
                       </div>
-                      <div className="bg-muted/50 rounded-2xl rounded-tl-none px-3 py-2 max-w-[85%]">
+                      <div className="bg-muted/50 rounded-2xl rounded-tl-none px-3 py-2">
                         <p className="text-xs">
                           {currentLang === 'en-US' ? 'Hi! Ask me anything about this video.' :
                            currentLang === 'es-ES' ? '¡Hola! Pregúntame sobre este video.' :
@@ -221,36 +242,38 @@ const HeroSection = () => {
                         <div className="w-7 h-7 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                           AI
                         </div>
-                        <div className="bg-muted/50 rounded-2xl rounded-tl-none px-3 py-2 max-w-[85%]">
+                        <div className="bg-muted/50 rounded-2xl rounded-tl-none px-3 py-2">
                           <p className="text-xs leading-relaxed">
-                            {currentLang === 'en-US' ? 'The 5 productivity hacks are: 1) Time blocking - scheduling specific tasks in your calendar, 2) The 2-minute rule - if it takes less than 2 minutes, do it now, 3) Single-tasking instead of multitasking, 4) Morning routines to set the day right, and 5) Regular breaks using the Pomodoro technique. These simple changes helped transform daily productivity!' :
-                             currentLang === 'es-ES' ? 'Los 5 trucos de productividad son: 1) Bloqueo de tiempo - programar tareas específicas en tu calendario, 2) La regla de 2 minutos - si toma menos de 2 minutos, hazlo ahora, 3) Monotarea en lugar de multitarea, 4) Rutinas matutinas para empezar el día bien, y 5) Descansos regulares usando la técnica Pomodoro. ¡Estos simples cambios ayudaron a transformar la productividad diaria!' :
-                             'Os 5 truques de produtividade são: 1) Bloqueio de tempo - agendar tarefas específicas no calendário, 2) A regra dos 2 minutos - se leva menos de 2 minutos, faça agora, 3) Monotarefa ao invés de multitarefa, 4) Rotinas matinais para começar o dia bem, e 5) Pausas regulares usando a técnica Pomodoro. Essas mudanças simples ajudaram a transformar a produtividade diária!'}
+                            {currentLang === 'en-US' ? 'The 5 productivity hacks are: 1) Time blocking - scheduling specific tasks in your calendar, 2) The 2-minute rule - if it takes less than 2 minutes, do it now, 3) Single-tasking instead of multitasking, 4) Morning routines to set the day right, and 5) Regular breaks using the Pomodoro technique.' :
+                             currentLang === 'es-ES' ? 'Los 5 trucos son: 1) Bloqueo de tiempo, 2) Regla de 2 minutos - si toma menos de 2 minutos, hazlo ahora, 3) Monotarea en lugar de multitarea, 4) Rutinas matutinas, y 5) Descansos regulares con técnica Pomodoro.' :
+                             'Os 5 truques são: 1) Bloqueio de tempo, 2) Regra dos 2 minutos - se leva menos de 2 minutos, faça agora, 3) Monotarefa ao invés de multitarefa, 4) Rotinas matinais, e 5) Pausas regulares com técnica Pomodoro.'}
                           </p>
                           <span className="text-[10px] text-muted-foreground mt-1 block">11:23 PM</span>
                         </div>
                       </div>
                     )}
                   </div>
-                  
-                  <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-                    <input 
-                      type="text" 
-                      placeholder={currentLang === 'en-US' ? 'Ask about the video...' :
-                                   currentLang === 'es-ES' ? 'Pregunta sobre el video...' :
-                                   'Pergunte sobre o vídeo...'}
-                      className="flex-1 px-3 py-1.5 text-xs bg-muted/30 rounded-full border border-border/50 focus:outline-none focus:border-brand-purple/50 transition-colors"
-                      disabled
-                    />
-                    <button className="p-1.5 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                    </button>
-                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 pt-3 border-t border-border/30 mt-auto">
+                  <input 
+                    type="text" 
+                    placeholder={currentLang === 'en-US' ? 'Ask about the video...' :
+                                 currentLang === 'es-ES' ? 'Pregunta sobre el video...' :
+                                 'Pergunte sobre o vídeo...'}
+                    className="flex-1 px-3 py-1.5 text-xs bg-muted/30 rounded-full border border-border/50 focus:outline-none focus:border-brand-purple/50 transition-colors"
+                    disabled
+                  />
+                  <button className="p-1.5 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
+            
+            <div className="absolute -z-10 -top-4 -right-4 -left-4 -bottom-4 bg-gradient-to-r from-brand-purple/20 to-brand-blue/20 rounded-2xl blur-lg"></div>
           </div>
         </div>
       </div>
