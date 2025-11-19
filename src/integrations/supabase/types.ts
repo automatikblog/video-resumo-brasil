@@ -46,7 +46,14 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           id: string
+          monthly_videos_limit: number | null
+          monthly_videos_used: number | null
           preferred_language: string | null
+          stripe_subscription_id: string | null
+          subscription_end_date: string | null
+          subscription_plan: string | null
+          subscription_start_date: string | null
+          subscription_status: string | null
           updated_at: string | null
           usage_count: number | null
         }
@@ -54,7 +61,14 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id: string
+          monthly_videos_limit?: number | null
+          monthly_videos_used?: number | null
           preferred_language?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end_date?: string | null
+          subscription_plan?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string | null
           updated_at?: string | null
           usage_count?: number | null
         }
@@ -62,7 +76,14 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id?: string
+          monthly_videos_limit?: number | null
+          monthly_videos_used?: number | null
           preferred_language?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end_date?: string | null
+          subscription_plan?: string | null
+          subscription_start_date?: string | null
+          subscription_status?: string | null
           updated_at?: string | null
           usage_count?: number | null
         }
