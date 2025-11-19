@@ -67,9 +67,9 @@ const Features = () => {
       title: currentLang === 'en-US' ? 'Bulk Processing' : 
              currentLang === 'es-ES' ? 'Procesamiento en Lote' : 
              'Processamento em Lote',
-      description: currentLang === 'en-US' ? 'Process entire playlists and channels at once. Extract transcripts from hundreds of videos with a single click.' : 
-                   currentLang === 'es-ES' ? 'Procesa listas de reproducción y canales completos de una vez. Extrae transcripciones de cientos de videos con un solo clic.' : 
-                   'Processe playlists e canais inteiros de uma vez. Extraia transcrições de centenas de vídeos com um único clique.'
+      description: currentLang === 'en-US' ? 'Process entire playlists at once. Extract transcripts from hundreds of videos with a single click.' : 
+                   currentLang === 'es-ES' ? 'Procesa listas de reproducción completas de una vez. Extrae transcripciones de cientos de videos con un solo clic.' : 
+                   'Processe playlists inteiras de uma vez. Extraia transcrições de centenas de vídeos com um único clique.'
     },
     {
       icon: (
