@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { getCurrentLang, getLangString } from '@/services/languageService';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,16 @@ import { useNavigate } from 'react-router-dom';
 const HeroSection = () => {
   const currentLang = getCurrentLang();
   const navigate = useNavigate();
+  const [animationStep, setAnimationStep] = useState(0);
+  
+  useEffect(() => {
+    const timings = [0, 2000, 3500, 9000]; // Initial, user message, AI response, reset
+    const timer = setTimeout(() => {
+      setAnimationStep((prev) => (prev + 1) % 4);
+    }, timings[animationStep] || 2000);
+    
+    return () => clearTimeout(timer);
+  }, [animationStep]);
   
   const handleTryNow = () => {
     document.getElementById('ferramenta')?.scrollIntoView({ behavior: 'smooth' });
@@ -135,19 +145,79 @@ const HeroSection = () => {
           </div>
           
           <div className="relative animate-fade-in">
-            <div className="relative z-10 bg-white rounded-2xl shadow-xl p-3 border border-border/50">
-              <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <svg className="w-20 h-20 mx-auto mb-4 text-brand-purple" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M23 9.71a8.5 8.5 0 0 0-.91-4.13 2.92 2.92 0 0 0-1.72-1A78.36 78.36 0 0 0 12 4.27a78.45 78.45 0 0 0-8.34.3 2.87 2.87 0 0 0-1.46.74c-.9.83-1 2.25-1.1 3.45a48.29 48.29 0 0 0 0 6.48 9.55 9.55 0 0 0 .3 2 3.14 3.14 0 0 0 .71 1.36 2.86 2.86 0 0 0 1.49.78 45.18 45.18 0 0 0 6.5.33c3.5.05 6.57 0 10.2-.28a2.88 2.88 0 0 0 1.53-.78 2.49 2.49 0 0 0 .61-1 10.58 10.58 0 0 0 .52-3.4c.04-.56.04-3.94.04-4.54ZM9.74 14.85V8.66l5.92 3.11c-1.66.92-3.85 1.96-5.92 3.08Z"/>
-                    </svg>
-                    <p className="text-lg font-medium">
-                      {currentLang === 'en-US' ? 'YouTube Video' : 
-                       currentLang === 'es-ES' ? 'Video de YouTube' : 
-                       'Vídeo do YouTube'}
-                    </p>
+            <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 border border-border/50">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-4 border-b border-border/30">
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue animate-pulse"></div>
+                  <h3 className="text-lg font-semibold bg-gradient-to-r from-brand-purple to-brand-blue bg-clip-text text-transparent">
+                    {currentLang === 'en-US' ? 'Chat With Transcript' : 
+                     currentLang === 'es-ES' ? 'Chat con Transcripción' : 
+                     'Chat com Transcrição'}
+                  </h3>
+                </div>
+                
+                <div className="space-y-3 min-h-[280px]">
+                  {/* AI Initial Message */}
+                  <div className="flex gap-3 animate-fade-in">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                      AI
+                    </div>
+                    <div className="bg-muted/50 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%]">
+                      <p className="text-sm">
+                        {currentLang === 'en-US' ? 'Hello! I can answer questions about this transcription. What would you like to know?' :
+                         currentLang === 'es-ES' ? '¡Hola! Puedo responder preguntas sobre esta transcripción. ¿Qué te gustaría saber?' :
+                         'Olá! Posso responder perguntas sobre esta transcrição. O que você gostaria de saber?'}
+                      </p>
+                      <span className="text-xs text-muted-foreground mt-1 block">11:23 PM</span>
+                    </div>
                   </div>
+                  
+                  {/* User Message */}
+                  {animationStep >= 1 && (
+                    <div className="flex gap-3 justify-end animate-fade-in">
+                      <div className="bg-gradient-to-r from-brand-purple to-brand-blue rounded-2xl rounded-tr-none px-4 py-3 max-w-[85%]">
+                        <p className="text-sm text-white">
+                          {currentLang === 'en-US' ? 'What is this video about?' :
+                           currentLang === 'es-ES' ? '¿De qué trata este video?' :
+                           'Sobre o que é este vídeo?'}
+                        </p>
+                        <span className="text-xs text-white/80 mt-1 block">11:23 PM</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* AI Response */}
+                  {animationStep >= 2 && (
+                    <div className="flex gap-3 animate-fade-in">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                        AI
+                      </div>
+                      <div className="bg-muted/50 rounded-2xl rounded-tl-none px-4 py-3 max-w-[85%]">
+                        <p className="text-sm">
+                          {currentLang === 'en-US' ? 'This video is about how to get anything you want in life by understanding how your brain works and structuring it in three ways to align your energy, focus, and motivation. The speaker shares his personal experience of transforming himself from someone who barely passed high school and was broke to someone with a six-pack and a nine-figure net worth, and being married to a pretty lady.' :
+                           currentLang === 'es-ES' ? 'Este video trata sobre cómo conseguir cualquier cosa que quieras en la vida entendiendo cómo funciona tu cerebro y estructurándolo de tres maneras para alinear tu energía, enfoque y motivación. El orador comparte su experiencia personal de transformarse de alguien que apenas pasó la escuela secundaria y estaba en bancarrota a alguien con un six-pack y un patrimonio neto de nueve cifras, y estar casado con una mujer bonita.' :
+                           'Este vídeo é sobre como conseguir qualquer coisa que você queira na vida entendendo como seu cérebro funciona e estruturando-o de três maneiras para alinhar sua energia, foco e motivação. O palestrante compartilha sua experiência pessoal de se transformar de alguém que mal passou no ensino médio e estava falido para alguém com um tanquinho e um patrimônio líquido de nove dígitos, e casado com uma mulher bonita.'}
+                        </p>
+                        <span className="text-xs text-muted-foreground mt-1 block">11:23 PM</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+                  <input 
+                    type="text" 
+                    placeholder={currentLang === 'en-US' ? 'Ask a question about the transcription...' :
+                                 currentLang === 'es-ES' ? 'Haz una pregunta sobre la transcripción...' :
+                                 'Faça uma pergunta sobre a transcrição...'}
+                    className="flex-1 px-4 py-2 text-sm bg-muted/30 rounded-full border border-border/50 focus:outline-none focus:border-brand-purple/50 transition-colors"
+                    disabled
+                  />
+                  <button className="p-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-blue text-white hover:opacity-90 transition-opacity">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
